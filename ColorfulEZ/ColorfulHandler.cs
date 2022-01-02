@@ -88,10 +88,10 @@ namespace Mistaken.ColorfulEZ
             { "ez_conference_stripes", RoomType.EzConference },             // done
             { "ez_three_way_stripes", RoomType.EzTCross },                  // done
             { "ez_crossing_stripes", RoomType.EzCrossing },                 // done
-            { "ez_curve_stripes", RoomType.EzCurve },                       // not done
+            { "ez_curve_stripes", RoomType.EzCurve },                       // done
             { "ez_intercom_stripes", RoomType.EzIntercom },                 // not done
-            { "ez_gate_a_stripes", RoomType.EzGateA },                      // not done
-            { "ez_gate_b_stripes", RoomType.EzGateB },                      // not done (optional)
+            { "ez_gatea_stripes", RoomType.EzGateA },                      // not done (wip)
+            { "ez_gateb_stripes", RoomType.EzGateB },                      // not done (optional) (wip)
             { "ez_vent_stripes", RoomType.EzVent },                         // not done (optional)
             { "ez_shelter_stripes", RoomType.EzShelter },                   // not done (not a priority)
             { "ez_pcs_stripes", RoomType.EzPcs },                           // done
@@ -159,6 +159,9 @@ namespace Mistaken.ColorfulEZ
 
         private GameObject ConvertToToy(GameObject toConvert, Transform parent, Room room)
         {
+            if (!toConvert.activeSelf)
+                return null;
+
             this.Log.Debug($"Loading {toConvert.name}", PluginHandler.Instance.Config.VerbouseOutput);
             var meshFilter = toConvert.GetComponent<MeshFilter>();
             GameObject gameObject;
