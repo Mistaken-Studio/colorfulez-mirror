@@ -88,11 +88,10 @@ namespace Mistaken.ColorfulEZ
             { "ez_three_way_stripes", RoomType.EzTCross },                  // done
             { "ez_crossing_stripes", RoomType.EzCrossing },                 // done
             { "ez_curve_stripes", RoomType.EzCurve },                       // done
-            { "ez_intercom_stripes", RoomType.EzIntercom },                 // not done
-            { "ez_gatea_stripes", RoomType.EzGateA },                      // not done (wip)
-            { "ez_gateb_stripes", RoomType.EzGateB },                      // not done (optional) (wip)
-            { "ez_vent_stripes", RoomType.EzVent },                         // not done (optional)
-            { "ez_shelter_stripes", RoomType.EzShelter },                   // not done (not a priority)
+            { "ez_intercom_stripes", RoomType.EzIntercom },                 // done
+            { "ez_gatea_stripes", RoomType.EzGateA },                       // done
+            { "ez_gateb_stripes", RoomType.EzGateB },                       // done
+            { "ez_shelter_stripes", RoomType.EzShelter },                   // done
             { "ez_pcs_stripes", RoomType.EzPcs },                           // done
             { "ez_pcs_downstairs_stripes", RoomType.EzDownstairsPcs },      // done
             { "ez_pcs_upstairs_stripes", RoomType.EzUpstairsPcs },          // done
@@ -109,7 +108,9 @@ namespace Mistaken.ColorfulEZ
         {
             this.spawnedObjects.Clear();
             this.LoadAssets();
-            Timing.CallDelayed(20f, () => this.RunCoroutine(this.UpdateColor()));
+
+            // Timing.CallDelayed(20f, () => this.RunCoroutine(this.UpdateColor()));
+            this.ChangeColor(Color.HSVToRGB(UnityEngine.Random.Range(0f, 1f), 1f, 1f, true));
         }
 
         private void LoadAssets()
@@ -245,30 +246,22 @@ namespace Mistaken.ColorfulEZ
         private IEnumerator<float> UpdateColor()
         {
             float hue = 0;
-
-            // float newHue;
             while (true)
             {
                 yield return Timing.WaitForSeconds(0.01f);
-                var objects = this.spawnedObjects.ToArray();
-
-                var color = Color.HSVToRGB(hue / 360f, 1f, 1f, true);
-                for (int i = 0; i < objects.Length; i++)
-                {
-                    objects[i].NetworkMaterialColor = color;
-                }
-
-                /*foreach (var key in RoomsObjects.Keys)
-                {
-                    newHue = (hue + 180) % 360;
-                    key.Color = Color.HSVToRGB(newHue / 360f, 1f, 1f, true);
-                }*/
+                this.ChangeColor(Color.HSVToRGB(hue / 360f, 1f, 1f, true));
 
                 hue += 2f;
 
                 if (hue >= 360f)
                     hue = 0;
             }
+        }
+
+        private void ChangeColor(Color color)
+        {
+            foreach (var item in this.spawnedObjects.ToArray())
+                item.NetworkMaterialColor = color;
         }
     }
 }
