@@ -7,7 +7,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.AccessControl;
 using AdminToys;
 using Exiled.API.Enums;
 using Exiled.API.Features;
@@ -136,20 +135,24 @@ namespace Mistaken.ColorfulEZ
 
                 foreach (var room in Map.Rooms.Where(x => x.Type == PrefabConversion[file]))
                 {
-                    var parent = new GameObject();
-                    parent.transform.parent = room.transform;
-                    parent.transform.localRotation = Quaternion.identity;
-                    parent.transform.localPosition = Vector3.zero;
+                    if (room.Type == RoomType.HczEzCheckpoint)
+                    {
+                        var checkpoint = room.transform.Find("Checkpoint");
 
-                    var obj = this.ConvertToToy(prefab, null, room);
-                    var objrot = obj.transform.rotation;
-                    var objpos = obj.transform.position;
-                    this.Log.Debug(objrot, true);
-                    this.Log.Debug(objpos, true);
-
-                    obj.transform.parent = parent.transform;
-                    obj.transform.localRotation = objrot;
-                    obj.transform.localPosition = objpos;
+                        var obj = this.ConvertToToy(prefab, checkpoint, room);
+                        obj.transform.localPosition = Vector3.zero;
+                        obj.transform.localRotation = Quaternion.identity;
+                        /*var objrot = obj.transform.rotation;
+                        var objpos = obj.transform.position;
+                        obj.transform.localRotation = objrot;
+                        obj.transform.localPosition = objpos;*/
+                    }
+                    else
+                    {
+                        var obj = this.ConvertToToy(prefab, room.transform, room);
+                        obj.transform.localPosition = Vector3.zero;
+                        obj.transform.localRotation = Quaternion.identity;
+                    }
                 }
 
                 boundle.Unload(false);
