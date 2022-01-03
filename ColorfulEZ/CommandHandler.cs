@@ -22,17 +22,6 @@ namespace Mistaken.ColorfulEZ
 
             switch (args[0])
             {
-                case "reload":
-                    {
-                        if (ColorfulHandler.Instance.ReloadObjects())
-                        {
-                            success = true;
-                            return new string[] { "Success" };
-                        }
-
-                        return new string[] { "Failed to reload objects" };
-                    }
-
                 case string i when i == "changecolor" || i == "cc":
                     {
                         if (args.Length < 2)
@@ -57,8 +46,7 @@ namespace Mistaken.ColorfulEZ
         {
             return new string[]
             {
-                "Colorfulez reload - reloads all objects spawned by ColorfulEZ",
-                "Colorfulez changecolor (Alias cc) - changes the color of objects spawned by ColorfulEZ",
+                "Colorfulez changecolor - changes the color of objects spawned by ColorfulEZ",
             };
         }
     }

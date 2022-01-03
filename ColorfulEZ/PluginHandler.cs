@@ -43,6 +43,8 @@ namespace Mistaken.ColorfulEZ
         /// <inheritdoc/>
         public override void OnDisabled()
         {
+            ColorfulHandler.Instance.RemoveObjects();
+
             API.Diagnostics.Module.OnDisable(this);
 
             base.OnDisabled();
