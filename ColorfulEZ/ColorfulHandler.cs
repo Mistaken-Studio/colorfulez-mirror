@@ -128,7 +128,7 @@ namespace Mistaken.ColorfulEZ
             {
                 foreach (var item in Map.Rooms)
                 {
-                    if (Vector3.Distance(room.Position, item.Position) < 35f)
+                    if (Vector3.Distance(room.Position, item.Position) < 41f)
                     {
                         if (!ToLoad.ContainsKey(item))
                             ToLoad.Add(item, new HashSet<Room>());
