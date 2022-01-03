@@ -128,7 +128,7 @@ namespace Mistaken.ColorfulEZ
             {
                 foreach (var item in Map.Rooms)
                 {
-                    if (Vector3.Distance(room.Position, item.Position) < 41f)
+                    if (Vector3.Distance(room.Position, item.Position) < PluginHandler.Instance.Config.RenderDistance)
                     {
                         if (!ToLoad.ContainsKey(item))
                             ToLoad.Add(item, new HashSet<Room>());
@@ -294,7 +294,7 @@ namespace Mistaken.ColorfulEZ
         {
             while (true)
             {
-                yield return Timing.WaitForSeconds(1f);
+                yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.NormalRefreshTime);
                 foreach (var player in RealPlayers.List.Where(x => !x.GetEffectActive<Scp207>() && !x.GetEffectActive<MovementBoost>() && x.Role != RoleType.Scp173 && x.Role != RoleType.Scp096 && !x.NoClipEnabled))
                 {
                     try
@@ -331,7 +331,7 @@ namespace Mistaken.ColorfulEZ
         {
             while (true)
             {
-                yield return Timing.WaitForSeconds(0.5f);
+                yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.FastRefreshTime);
                 foreach (var player in RealPlayers.List.Where(x => x.GetEffectActive<Scp207>() || x.GetEffectActive<MovementBoost>() || x.Role == RoleType.Scp173 || x.Role == RoleType.Scp096 || x.NoClipEnabled))
                 {
                     try
