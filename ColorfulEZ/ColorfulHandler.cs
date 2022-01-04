@@ -124,16 +124,15 @@ namespace Mistaken.ColorfulEZ
             RoomsObjects.Clear();
             ToLoad.Clear();
 
-            foreach (var room in Map.Rooms.Where(x => PrefabConversion.ContainsValue(x.Type)))
+            foreach (var room in API.Utilities.Room.EZ_HCZ)
             {
-                foreach (var item in Map.Rooms)
+                if (!PrefabConversion.ContainsValue(room.ExiledRoom.Type))
+                    continue;
+                foreach (var item in room.FarNeighbors.Select(x => x.ExiledRoom))
                 {
-                    if (Vector3.Distance(room.Position, item.Position) < PluginHandler.Instance.Config.RenderDistance)
-                    {
-                        if (!ToLoad.ContainsKey(item))
-                            ToLoad.Add(item, new HashSet<Room>());
-                        ToLoad[item].Add(room);
-                    }
+                    if (!ToLoad.ContainsKey(item))
+                        ToLoad.Add(item, new HashSet<Room>());
+                    ToLoad[item].Add(room.ExiledRoom);
                 }
             }
 
@@ -141,7 +140,7 @@ namespace Mistaken.ColorfulEZ
 
             // Timing.CallDelayed(20f, () => this.RunCoroutine(this.UpdateColor()));
             this.ChangeObjectsColor(Color.HSVToRGB(UnityEngine.Random.Range(0f, 1f), 1f, 1f, true));
-            var cor = this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
+            this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
             this.RunCoroutine(this.UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers");
         }
 
@@ -295,34 +294,13 @@ namespace Mistaken.ColorfulEZ
             while (true)
             {
                 yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.NormalRefreshTime);
+
                 foreach (var player in RealPlayers.List.Where(x => !x.GetEffectActive<Scp207>() && !x.GetEffectActive<MovementBoost>() && x.Role != RoleType.Scp173 && x.Role != RoleType.Scp096 && !x.NoClipEnabled))
                 {
-                    try
-                    {
-                        if (player.Role == RoleType.Spectator)
-                        {
-                            this.LoadForSpectator(player);
-                            continue;
-                        }
-
-                        var room = player.CurrentRoom;
-                        if (room is null)
-                        {
-                            this.UnloadFor(player);
-                            continue;
-                        }
-
-                        if (!this.loadedFor.ContainsKey(player))
-                            this.loadedFor.Add(player, new HashSet<Room>());
-                        if (ToLoad.ContainsKey(room))
-                            this.LoadFor(player, room);
-                        else
-                            this.UnloadFor(player);
-                    }
-                    catch (Exception ex)
-                    {
-                        this.Log.Error(ex);
-                    }
+                    if (player.IsDead)
+                        this.LoadForSpectator(player);
+                    else
+                        this.UpdateFor(player);
                 }
             }
         }
@@ -332,72 +310,83 @@ namespace Mistaken.ColorfulEZ
             while (true)
             {
                 yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.FastRefreshTime);
-                foreach (var player in RealPlayers.List.Where(x => x.GetEffectActive<Scp207>() || x.GetEffectActive<MovementBoost>() || x.Role == RoleType.Scp173 || x.Role == RoleType.Scp096 || x.NoClipEnabled))
-                {
-                    try
-                    {
-                        var room = player.CurrentRoom;
-                        if (room is null)
-                        {
-                            this.UnloadFor(player);
-                            continue;
-                        }
 
-                        if (!this.loadedFor.ContainsKey(player))
-                            this.loadedFor.Add(player, new HashSet<Room>());
-                        if (ToLoad.ContainsKey(room))
-                            this.LoadFor(player, room);
-                        else
-                            this.UnloadFor(player);
-                    }
-                    catch (Exception ex)
-                    {
-                        this.Log.Error(ex);
-                    }
+                foreach (var player in RealPlayers.List.Where(x => x.GetEffectActive<Scp207>() || x.GetEffectActive<MovementBoost>() || x.Role == RoleType.Scp173 || x.Role == RoleType.Scp096 || x.NoClipEnabled))
+                    this.UpdateFor(player);
+            }
+        }
+
+        private void UpdateFor(Player player)
+        {
+            try
+            {
+                var room = player.CurrentRoom;
+                if (room is null)
+                {
+                    this.UnloadFor(player);
+                    return;
                 }
+
+                if (!this.loadedFor.ContainsKey(player))
+                    this.loadedFor.Add(player, new HashSet<Room>());
+                if (ToLoad.ContainsKey(room))
+                    this.LoadFor(player, room);
+                else
+                    this.UnloadFor(player);
+            }
+            catch (Exception ex)
+            {
+                this.Log.Error(ex);
             }
         }
 
         private void LoadForSpectator(Player spectator)
         {
-            var spectated = spectator.SpectatedPlayer;
-            if (spectated is null)
-                return;
-            if (this.loadedFor[spectator] == this.loadedFor[spectated])
-                return;
-            foreach (var r in this.loadedFor[spectated].Where(x => !this.loadedFor[spectator].Contains(x)))
+            try
             {
-                try
+                var spectated = spectator.SpectatedPlayer;
+                if (spectated is null)
+                    return;
+                if (this.loadedFor[spectator] == this.loadedFor[spectated])
+                    return;
+                foreach (var r in this.loadedFor[spectated].Where(x => !this.loadedFor[spectator].Contains(x)))
                 {
-                    foreach (var obj in RoomsObjects[r])
+                    try
                     {
-                        if (Server.SendSpawnMessage is null)
-                            continue;
-                        if (spectator.ReferenceHub.networkIdentity.connectionToClient is null)
-                            continue;
-                        Server.SendSpawnMessage.Invoke(null, new object[] { obj, spectator.Connection });
+                        foreach (var obj in RoomsObjects[r])
+                        {
+                            if (Server.SendSpawnMessage is null)
+                                continue;
+                            if (spectator.ReferenceHub.networkIdentity.connectionToClient is null)
+                                continue;
+                            Server.SendSpawnMessage.Invoke(null, new object[] { obj, spectator.Connection });
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    this.Log.Error(ex);
+                    catch (Exception ex)
+                    {
+                        this.Log.Error(ex);
+                    }
+
+                    this.loadedFor[spectator].Add(r);
                 }
 
-                this.loadedFor[spectator].Add(r);
-            }
-
-            if (this.loadedFor[spectator].Count > this.loadedFor[spectated].Count)
-            {
-                var room = spectated.CurrentRoom;
-                if (!(room is null))
+                if (this.loadedFor[spectator].Count > this.loadedFor[spectated].Count)
                 {
-                    if (ToLoad.ContainsKey(room))
-                        this.UnloadFor(spectator, room);
+                    var room = spectated.CurrentRoom;
+                    if (!(room is null))
+                    {
+                        if (ToLoad.ContainsKey(room))
+                            this.UnloadFor(spectator, room);
+                        else
+                            this.UnloadFor(spectator);
+                    }
                     else
                         this.UnloadFor(spectator);
                 }
-                else
-                    this.UnloadFor(spectator);
+            }
+            catch (System.Exception ex)
+            {
+                this.Log.Error(ex);
             }
         }
 
