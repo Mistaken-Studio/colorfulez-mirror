@@ -38,14 +38,12 @@ namespace Mistaken.ColorfulEZ
         public override void OnEnable()
         {
             Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
-            Exiled.Events.Handlers.Player.Left += this.Player_Left;
             Exiled.Events.Handlers.Player.Verified += this.Player_Verified;
         }
 
         public override void OnDisable()
         {
             Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
-            Exiled.Events.Handlers.Player.Left -= this.Player_Left;
             Exiled.Events.Handlers.Player.Verified -= this.Player_Verified;
         }
 
@@ -53,10 +51,10 @@ namespace Mistaken.ColorfulEZ
 
         internal void RemoveObjects()
         {
-            if (RoomsObjects.Count == 0)
+            if (this.roomsObjects.Count == 0)
                 return;
 
-            foreach (var pairs in RoomsObjects.ToArray())
+            foreach (var pairs in this.roomsObjects.ToArray())
             {
                 foreach (var netid in pairs.Value.ToArray())
                 {
@@ -66,16 +64,16 @@ namespace Mistaken.ColorfulEZ
                     NetworkServer.Destroy(netid.gameObject);
                 }
 
-                RoomsObjects.Remove(pairs.Key);
+                this.roomsObjects.Remove(pairs.Key);
             }
         }
 
         internal bool ChangeObjectsColor(Color color)
         {
-            if (RoomsObjects.Count == 0)
+            if (this.roomsObjects.Count == 0)
                 return false;
 
-            foreach (var values in RoomsObjects.Values)
+            foreach (var values in this.roomsObjects.Values)
             {
                 foreach (var netid in values)
                 {
@@ -108,11 +106,10 @@ namespace Mistaken.ColorfulEZ
             { "ez_hcz_checkpoint_stripes", RoomType.HczEzCheckpoint },      // done
         };
 
-        private static readonly Dictionary<Room, HashSet<Room>> ToLoad = new Dictionary<Room, HashSet<Room>>();
+        private readonly HashSet<API.Utilities.Room> rooms = new HashSet<API.Utilities.Room>();
 
-        private static readonly Dictionary<Room, HashSet<NetworkIdentity>> RoomsObjects = new Dictionary<Room, HashSet<NetworkIdentity>>();
-
-        private readonly Dictionary<Player, HashSet<Room>> loadedFor = new Dictionary<Player, HashSet<Room>>();
+        private readonly Dictionary<Room, HashSet<NetworkIdentity>> roomsObjects = new Dictionary<Room, HashSet<NetworkIdentity>>();
+        private readonly Dictionary<Player, API.Utilities.Room> lastRooms = new Dictionary<Player, API.Utilities.Room>();
 
         private readonly string assetsPath;
 
@@ -120,41 +117,28 @@ namespace Mistaken.ColorfulEZ
 
         private void Server_WaitingForPlayers()
         {
-            this.loadedFor.Clear();
-            RoomsObjects.Clear();
-            ToLoad.Clear();
+            this.roomsObjects.Clear();
+            this.lastRooms.Clear();
+            this.rooms.Clear();
 
-            foreach (var room in Map.Rooms.Where(x => PrefabConversion.ContainsValue(x.Type)))
+            foreach (var room in API.Utilities.Room.Rooms.Values)
             {
-                foreach (var item in Map.Rooms)
-                {
-                    if (Vector3.Distance(room.Position, item.Position) < PluginHandler.Instance.Config.RenderDistance)
-                    {
-                        if (!ToLoad.ContainsKey(item))
-                            ToLoad.Add(item, new HashSet<Room>());
-                        ToLoad[item].Add(room);
-                    }
-                }
+                if (!PrefabConversion.ContainsValue(room.ExiledRoom.Type))
+                    continue;
+                this.rooms.Add(room);
             }
 
             this.LoadAssets();
 
-            // Timing.CallDelayed(20f, () => this.RunCoroutine(this.UpdateColor()));
             this.ChangeObjectsColor(Color.HSVToRGB(UnityEngine.Random.Range(0f, 1f), 1f, 1f, true));
-            var cor = this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
+            this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
             this.RunCoroutine(this.UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers");
-        }
-
-        private void Player_Left(Exiled.Events.EventArgs.LeftEventArgs ev)
-        {
-            if (this.loadedFor.ContainsKey(ev.Player))
-                this.loadedFor.Remove(ev.Player);
         }
 
         private void Player_Verified(Exiled.Events.EventArgs.VerifiedEventArgs ev)
         {
-            if (!this.loadedFor.ContainsKey(ev.Player))
-                this.loadedFor.Add(ev.Player, Map.Rooms.Where(x => PrefabConversion.ContainsValue(x.Type)).ToHashSet());
+            foreach (var item in this.rooms)
+                this.UnloadRoomFor(ev.Player, item);
         }
 
         private void LoadAssets()
@@ -258,9 +242,9 @@ namespace Mistaken.ColorfulEZ
             {
                 if (!gameObject.name.Contains("(ignore)"))
                 {
-                    if (!RoomsObjects.ContainsKey(room))
-                        RoomsObjects.Add(room, new HashSet<NetworkIdentity>());
-                    RoomsObjects[room].Add(toy.netIdentity);
+                    if (!this.roomsObjects.ContainsKey(room))
+                        this.roomsObjects.Add(room, new HashSet<NetworkIdentity>());
+                    this.roomsObjects[room].Add(toy.netIdentity);
                 }
             }
 
@@ -295,34 +279,13 @@ namespace Mistaken.ColorfulEZ
             while (true)
             {
                 yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.NormalRefreshTime);
+
                 foreach (var player in RealPlayers.List.Where(x => !x.GetEffectActive<Scp207>() && !x.GetEffectActive<MovementBoost>() && x.Role != RoleType.Scp173 && x.Role != RoleType.Scp096 && !x.NoClipEnabled))
                 {
-                    try
-                    {
-                        if (player.Role == RoleType.Spectator)
-                        {
-                            this.LoadForSpectator(player);
-                            continue;
-                        }
-
-                        var room = player.CurrentRoom;
-                        if (room is null)
-                        {
-                            this.UnloadFor(player);
-                            continue;
-                        }
-
-                        if (!this.loadedFor.ContainsKey(player))
-                            this.loadedFor.Add(player, new HashSet<Room>());
-                        if (ToLoad.ContainsKey(room))
-                            this.LoadFor(player, room);
-                        else
-                            this.UnloadFor(player);
-                    }
-                    catch (Exception ex)
-                    {
-                        this.Log.Error(ex);
-                    }
+                    if (player.IsDead)
+                        this.UpdateForSpectator(player);
+                    else
+                        this.UpdateForAlive(player);
                 }
             }
         }
@@ -332,126 +295,115 @@ namespace Mistaken.ColorfulEZ
             while (true)
             {
                 yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.FastRefreshTime);
-                foreach (var player in RealPlayers.List.Where(x => x.GetEffectActive<Scp207>() || x.GetEffectActive<MovementBoost>() || x.Role == RoleType.Scp173 || x.Role == RoleType.Scp096 || x.NoClipEnabled))
-                {
-                    try
-                    {
-                        var room = player.CurrentRoom;
-                        if (room is null)
-                        {
-                            this.UnloadFor(player);
-                            continue;
-                        }
 
-                        if (!this.loadedFor.ContainsKey(player))
-                            this.loadedFor.Add(player, new HashSet<Room>());
-                        if (ToLoad.ContainsKey(room))
-                            this.LoadFor(player, room);
-                        else
-                            this.UnloadFor(player);
-                    }
-                    catch (Exception ex)
-                    {
-                        this.Log.Error(ex);
-                    }
-                }
+                foreach (var player in RealPlayers.List.Where(x => x.GetEffectActive<Scp207>() || x.GetEffectActive<MovementBoost>() || x.Role == RoleType.Scp173 || x.Role == RoleType.Scp096 || x.NoClipEnabled))
+                    this.UpdateForAlive(player);
             }
         }
 
-        private void LoadForSpectator(Player spectator)
+        private void UpdateFor(Player player, API.Utilities.Room room)
         {
-            var spectated = spectator.SpectatedPlayer;
-            if (spectated is null)
-                return;
-            if (this.loadedFor[spectator] == this.loadedFor[spectated])
-                return;
-            foreach (var r in this.loadedFor[spectated].Where(x => !this.loadedFor[spectator].Contains(x)))
+            try
             {
-                try
-                {
-                    foreach (var obj in RoomsObjects[r])
-                    {
-                        if (Server.SendSpawnMessage is null)
-                            continue;
-                        if (spectator.ReferenceHub.networkIdentity.connectionToClient is null)
-                            continue;
-                        Server.SendSpawnMessage.Invoke(null, new object[] { obj, spectator.Connection });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    this.Log.Error(ex);
-                }
+                if (!this.lastRooms.TryGetValue(player, out var lastRoom))
+                    lastRoom = null;
 
-                this.loadedFor[spectator].Add(r);
-            }
+                if (lastRoom == room)
+                    return;
 
-            if (this.loadedFor[spectator].Count > this.loadedFor[spectated].Count)
-            {
-                var room = spectated.CurrentRoom;
-                if (!(room is null))
+                HashSet<API.Utilities.Room> loaded;
+                if (!(lastRoom is null))
                 {
-                    if (ToLoad.ContainsKey(room))
-                        this.UnloadFor(spectator, room);
-                    else
-                        this.UnloadFor(spectator);
+                    loaded = lastRoom.FarNeighbors.ToHashSet();
+                    loaded.Add(lastRoom);
                 }
                 else
-                    this.UnloadFor(spectator);
+                    loaded = new HashSet<API.Utilities.Room>();
+
+                HashSet<API.Utilities.Room> toLoad;
+                if (!(room is null))
+                {
+                    toLoad = room.FarNeighbors.ToHashSet();
+                    toLoad.Add(room);
+                }
+                else
+                    toLoad = new HashSet<API.Utilities.Room>();
+
+                var intersect = loaded.Intersect(toLoad).ToArray();
+
+                foreach (var item in intersect)
+                {
+                    loaded.Remove(item);
+                    toLoad.Remove(item);
+                }
+
+                foreach (var item in loaded)
+                    this.UnloadRoomFor(player, item);
+
+                foreach (var item in toLoad)
+                    this.LoadRoomFor(player, item);
+
+                this.lastRooms[player] = room;
+            }
+            catch (Exception ex)
+            {
+                this.Log.Error(ex);
             }
         }
 
-        private void LoadFor(Player player, Room room)
+        private void UpdateForAlive(Player player)
         {
-            if (this.loadedFor[player] == ToLoad[room])
+            var room = API.Utilities.Room.Get(player.CurrentRoom);
+
+            this.UpdateFor(player, room);
+        }
+
+        private void UpdateForSpectator(Player spectator)
+        {
+            this.UpdateFor(spectator, API.Utilities.Room.Get(spectator.SpectatedPlayer?.CurrentRoom));
+        }
+
+        private void LoadRoomFor(Player player, API.Utilities.Room room)
+        {
+            if (!this.rooms.Contains(room))
                 return;
-            foreach (var r in ToLoad[room].Where(x => !this.loadedFor[player].Contains(x)))
+
+            try
             {
-                try
+                foreach (var obj in this.roomsObjects[room.ExiledRoom])
                 {
-                    foreach (var obj in RoomsObjects[r])
-                    {
-                        if (Server.SendSpawnMessage is null)
-                            continue;
-                        if (player.ReferenceHub.networkIdentity.connectionToClient is null)
-                            continue;
-                        Server.SendSpawnMessage.Invoke(null, new object[] { obj, player.Connection });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    this.Log.Error(ex);
-                }
+                    if (Server.SendSpawnMessage is null)
+                        continue;
 
-                this.loadedFor[player].Add(r);
+                    if (player.Connection is null)
+                        continue;
+
+                    Server.SendSpawnMessage.Invoke(null, new object[] { obj, player.Connection });
+                }
             }
-
-            if (this.loadedFor[player].Count > ToLoad[room].Count)
-                this.UnloadFor(player, room);
+            catch (Exception ex)
+            {
+                this.Log.Error(ex);
+            }
         }
 
-        private void UnloadFor(Player player, Room room = null)
+        private void UnloadRoomFor(Player player, API.Utilities.Room room)
         {
-            var rooms = this.loadedFor[player].ToList();
-            if (!(room is null))
-                rooms.RemoveAll(x => ToLoad[room].Contains(x));
-            foreach (var r in rooms)
-            {
-                try
-                {
-                    foreach (var obj in RoomsObjects[r])
-                    {
-                        if (player.ReferenceHub.networkIdentity.connectionToClient is null)
-                            continue;
-                        player.Connection.Send(new ObjectDestroyMessage { netId = obj.netId }, 0);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    this.Log.Error(ex);
-                }
+            if (!this.rooms.Contains(room))
+                return;
 
-                this.loadedFor[player].Remove(r);
+            try
+            {
+                foreach (var obj in this.roomsObjects[room.ExiledRoom])
+                {
+                    if (player.ReferenceHub.networkIdentity.connectionToClient is null)
+                        continue;
+                    player.Connection.Send(new ObjectDestroyMessage { netId = obj.netId }, 0);
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Log.Error(ex);
             }
         }
 
