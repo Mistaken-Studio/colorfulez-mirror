@@ -120,6 +120,7 @@ namespace Mistaken.ColorfulEZ
             this.roomsObjects.Clear();
             this.lastRooms.Clear();
             this.rooms.Clear();
+            this.spawnedAmount = 0;
 
             foreach (var room in API.Utilities.Room.Rooms.Values)
             {
@@ -184,8 +185,12 @@ namespace Mistaken.ColorfulEZ
                     }
                 }
 
+                int items = 0;
+                foreach (var item in prefab.GetComponents<MeshRenderer>())
+                    items++;
+
                 boundle.Unload(false);
-                this.Log.Info($"Loaded {file}");
+                this.Log.Info($"Loaded {file} ({items} elements)");
             }
 
             this.Log.Info($"Successfully spawned {this.spawnedAmount} objects");
