@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.ComponentModel;
 using Mistaken.Updater.Config;
 
@@ -22,12 +23,6 @@ namespace Mistaken.ColorfulEZ
         public bool VerbouseOutput { get; set; }
 
         /// <summary>
-        /// Gets or sets object rendering distance.
-        /// </summary>
-        [Description("Sets object rendering distance")]
-        public float RenderDistance { get; set; } = 41f;
-
-        /// <summary>
         /// Gets or sets time for refreshing objects.
         /// </summary>
         [Description("Sets time for refreshing objects")]
@@ -44,6 +39,26 @@ namespace Mistaken.ColorfulEZ
         /// </summary>
         [Description("Sets path to assets inside the Plugins folder")]
         public string AssetsPath { get; set; } = "ColorfulAssets";
+
+        /// <summary>
+        /// Gets or sets colors for stripes.
+        /// </summary>
+        [Description("Defines colors stripes can be")]
+        public List<string> Colors { get; set; } = new List<string>()
+        {
+            "#35493e", // KeycardChaosInsurgency
+            "#b6887f", // KeycardContainmentEngineer
+            "#ba1846", // KeycardFacilityManager
+            "#606770", // KeycardGuard
+            "#bcb1e4", // KeycardJanitor
+            "#1841c8", // KeycardNTFCommander
+            "#5180f7", // KeycardNTFLieutenant
+            "#5b5b5b", // KeycardO5
+            "#e7d678", // KeycardScientist
+            "#ddab20", // KeycardResearchCoordinator
+            "#a2cade", // KeycardNTFOfficer
+            "#217778", // KeycardZoneManager
+        };
 
         /// <inheritdoc/>
         [Description("Auto Update Settings")]

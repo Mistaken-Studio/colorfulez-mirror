@@ -131,7 +131,14 @@ namespace Mistaken.ColorfulEZ
 
             this.LoadAssets();
 
-            this.ChangeObjectsColor(Color.HSVToRGB(UnityEngine.Random.Range(0f, 1f), 1f, 1f, true));
+            var rawColor = PluginHandler.Instance.Config.Colors[UnityEngine.Random.Range(0, PluginHandler.Instance.Config.Colors.Count)];
+            if (!ColorUtility.TryParseHtmlString(rawColor, out var color))
+            {
+                this.Log.Warn($"Invalid color \"{rawColor}\"");
+                color = Color.black;
+            }
+
+            this.ChangeObjectsColor(color);
             this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
             this.RunCoroutine(this.UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers");
         }
