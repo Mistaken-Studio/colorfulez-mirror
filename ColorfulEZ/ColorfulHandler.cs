@@ -224,7 +224,7 @@ namespace Mistaken.ColorfulEZ
             gameObject.transform.localRotation = toConvert.transform.localRotation;
             gameObject.transform.localScale = toConvert.transform.localScale;
 
-            toy.UpdatePositionServer();
+            toy?.UpdatePositionServer();
 
             var meshRenderer = toConvert.GetComponent<MeshRenderer>();
             if (!(meshFilter is null))
