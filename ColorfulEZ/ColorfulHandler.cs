@@ -212,7 +212,7 @@ namespace Mistaken.ColorfulEZ
                 gameObject = new GameObject();
             else
             {
-                toy = this.GetPrimitiveObjectToy();
+                toy = this.GetPrimitiveObjectToy(parent);
                 gameObject = toy.gameObject;
             }
 
@@ -223,6 +223,8 @@ namespace Mistaken.ColorfulEZ
             this.Log.Debug($"Position: {toConvert.transform.position}", PluginHandler.Instance.Config.VerbouseOutput);
             gameObject.transform.localRotation = toConvert.transform.localRotation;
             gameObject.transform.localScale = toConvert.transform.localScale;
+
+            toy.UpdatePositionServer();
 
             var meshRenderer = toConvert.GetComponent<MeshRenderer>();
             if (!(meshFilter is null))
@@ -260,26 +262,9 @@ namespace Mistaken.ColorfulEZ
             return gameObject;
         }
 
-        private PrimitiveObjectToy GetPrimitiveObjectToy()
+        private PrimitiveObjectToy GetPrimitiveObjectToy(Transform parent)
         {
-            foreach (var item in NetworkClient.prefabs.Values)
-            {
-                if (item.TryGetComponent<PrimitiveObjectToy>(out PrimitiveObjectToy adminToyBase))
-                {
-                    PrimitiveObjectToy toy = UnityEngine.Object.Instantiate<PrimitiveObjectToy>(adminToyBase);
-                    toy.SpawnerFootprint = new Footprint(Server.Host.ReferenceHub);
-                    NetworkServer.Spawn(toy.gameObject);
-                    toy.NetworkPrimitiveType = PrimitiveType.Sphere;
-                    toy.NetworkMaterialColor = Color.gray;
-                    toy.transform.position = Vector3.zero;
-                    toy.transform.eulerAngles = Vector3.zero;
-                    toy.transform.localScale = Vector3.one;
-                    toy.NetworkScale = toy.transform.localScale;
-                    return toy;
-                }
-            }
-
-            return null;
+            return API.Extensions.Extensions.SpawnPrimitive(PrimitiveType.Quad, parent, Color.gray, false);
         }
 
         private IEnumerator<float> UpdateObjectsForPlayers()
