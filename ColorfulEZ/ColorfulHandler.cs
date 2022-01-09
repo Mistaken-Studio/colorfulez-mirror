@@ -129,16 +129,8 @@ namespace Mistaken.ColorfulEZ
                 this.rooms.Add(room);
             }
 
-            this.LoadAssets();
+            this.RunCoroutine(this.LoadAssets());
 
-            var rawColor = PluginHandler.Instance.Config.Colors[UnityEngine.Random.Range(0, PluginHandler.Instance.Config.Colors.Count)];
-            if (!ColorUtility.TryParseHtmlString(rawColor, out var color))
-            {
-                this.Log.Warn($"Invalid color \"{rawColor}\"");
-                color = Color.black;
-            }
-
-            this.ChangeObjectsColor(color);
             this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
             this.RunCoroutine(this.UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers");
         }
@@ -149,7 +141,7 @@ namespace Mistaken.ColorfulEZ
                 this.UnloadRoomFor(ev.Player, item);
         }
 
-        private void LoadAssets()
+        private IEnumerator<float> LoadAssets()
         {
             foreach (var filePath in Directory.GetFiles(this.assetsPath))
             {
@@ -190,6 +182,8 @@ namespace Mistaken.ColorfulEZ
                         obj.transform.localPosition = Vector3.zero;
                         obj.transform.localRotation = Quaternion.identity;
                     }
+
+                    yield return Timing.WaitForSeconds(0.05f);
                 }
 
                 boundle.Unload(false);
@@ -197,6 +191,15 @@ namespace Mistaken.ColorfulEZ
             }
 
             this.Log.Info($"Successfully spawned {this.spawnedAmount} objects");
+
+            var rawColor = PluginHandler.Instance.Config.Colors[UnityEngine.Random.Range(0, PluginHandler.Instance.Config.Colors.Count)];
+            if (!ColorUtility.TryParseHtmlString(rawColor, out var color))
+            {
+                this.Log.Warn($"Invalid color \"{rawColor}\"");
+                color = Color.black;
+            }
+
+            this.ChangeObjectsColor(color);
         }
 
         private GameObject ConvertToToy(GameObject toConvert, Transform parent, Room room)
