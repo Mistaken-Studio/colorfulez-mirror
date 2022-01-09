@@ -58,6 +58,7 @@ namespace Mistaken.ColorfulEZ
             "#ddab20", // KeycardResearchCoordinator
             "#a2cade", // KeycardNTFOfficer
             "#217778", // KeycardZoneManager
+            "#FFFFFF", // White
         };
 
         /// <inheritdoc/>
