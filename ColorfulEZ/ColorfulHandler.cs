@@ -264,7 +264,7 @@ namespace Mistaken.ColorfulEZ
 
         private PrimitiveObjectToy GetPrimitiveObjectToy(Transform parent)
         {
-            return API.Extensions.Extensions.SpawnPrimitive(PrimitiveType.Quad, parent, Color.gray, false);
+            return API.MapPlus.SpawnPrimitive(PrimitiveType.Quad, parent, Color.gray, false);
         }
 
         private IEnumerator<float> UpdateObjectsForPlayers()
