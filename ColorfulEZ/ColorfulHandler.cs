@@ -36,14 +36,14 @@ namespace Mistaken.ColorfulEZ
 
         public override void OnEnable()
         {
-            Exiled.Events.Handlers.Map.Generated += this.Map_Generated;
+            Events.Handlers.CustomEvents.GeneratedCache += this.CustomEvents_GeneratedCache;
             Exiled.Events.Handlers.Player.Verified += this.Player_Verified;
             Exiled.Events.Handlers.Player.ChangingSpectatedPlayer += this.Player_ChangingSpectatedPlayer;
         }
 
         public override void OnDisable()
         {
-            Exiled.Events.Handlers.Map.Generated -= this.Map_Generated;
+            Events.Handlers.CustomEvents.GeneratedCache -= this.CustomEvents_GeneratedCache;
             Exiled.Events.Handlers.Player.Verified -= this.Player_Verified;
             Exiled.Events.Handlers.Player.ChangingSpectatedPlayer -= this.Player_ChangingSpectatedPlayer;
         }
@@ -116,27 +116,24 @@ namespace Mistaken.ColorfulEZ
 
         private ushort spawnedAmount;
 
-        private void Map_Generated()
+        private void CustomEvents_GeneratedCache()
         {
-            MEC.Timing.CallDelayed(2f, () =>
+            this.roomsObjects.Clear();
+            this.lastRooms.Clear();
+            this.rooms.Clear();
+            this.spawnedAmount = 0;
+
+            foreach (var room in API.Utilities.Room.Rooms.Values)
             {
-                this.roomsObjects.Clear();
-                this.lastRooms.Clear();
-                this.rooms.Clear();
-                this.spawnedAmount = 0;
+                if (!PrefabConversion.ContainsValue(room.ExiledRoom.Type))
+                    continue;
+                this.rooms.Add(room);
+            }
 
-                foreach (var room in API.Utilities.Room.Rooms.Values)
-                {
-                    if (!PrefabConversion.ContainsValue(room.ExiledRoom.Type))
-                        continue;
-                    this.rooms.Add(room);
-                }
+            this.RunCoroutine(this.LoadAssets());
 
-                this.RunCoroutine(this.LoadAssets());
-
-                this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
-                this.RunCoroutine(this.UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers");
-            });
+            this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
+            this.RunCoroutine(this.UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers");
         }
 
         private void Player_Verified(Exiled.Events.EventArgs.VerifiedEventArgs ev)
