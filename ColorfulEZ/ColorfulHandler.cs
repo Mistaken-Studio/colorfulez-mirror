@@ -13,7 +13,6 @@ using CustomPlayerEffects;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Interfaces;
-using Footprinting;
 using MEC;
 using Mirror;
 using Mistaken.API;
@@ -37,14 +36,14 @@ namespace Mistaken.ColorfulEZ
 
         public override void OnEnable()
         {
-            Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
+            Exiled.Events.Handlers.Map.Generated += this.Map_Generated;
             Exiled.Events.Handlers.Player.Verified += this.Player_Verified;
             Exiled.Events.Handlers.Player.ChangingSpectatedPlayer += this.Player_ChangingSpectatedPlayer;
         }
 
         public override void OnDisable()
         {
-            Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
+            Exiled.Events.Handlers.Map.Generated -= this.Map_Generated;
             Exiled.Events.Handlers.Player.Verified -= this.Player_Verified;
             Exiled.Events.Handlers.Player.ChangingSpectatedPlayer -= this.Player_ChangingSpectatedPlayer;
         }
@@ -117,24 +116,27 @@ namespace Mistaken.ColorfulEZ
 
         private ushort spawnedAmount;
 
-        private void Server_WaitingForPlayers()
+        private void Map_Generated()
         {
-            this.roomsObjects.Clear();
-            this.lastRooms.Clear();
-            this.rooms.Clear();
-            this.spawnedAmount = 0;
-
-            foreach (var room in API.Utilities.Room.Rooms.Values)
+            MEC.Timing.CallDelayed(2f, () =>
             {
-                if (!PrefabConversion.ContainsValue(room.ExiledRoom.Type))
-                    continue;
-                this.rooms.Add(room);
-            }
+                this.roomsObjects.Clear();
+                this.lastRooms.Clear();
+                this.rooms.Clear();
+                this.spawnedAmount = 0;
 
-            this.RunCoroutine(this.LoadAssets());
+                foreach (var room in API.Utilities.Room.Rooms.Values)
+                {
+                    if (!PrefabConversion.ContainsValue(room.ExiledRoom.Type))
+                        continue;
+                    this.rooms.Add(room);
+                }
 
-            this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
-            this.RunCoroutine(this.UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers");
+                this.RunCoroutine(this.LoadAssets());
+
+                this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
+                this.RunCoroutine(this.UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers");
+            });
         }
 
         private void Player_Verified(Exiled.Events.EventArgs.VerifiedEventArgs ev)
