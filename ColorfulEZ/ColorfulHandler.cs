@@ -17,6 +17,7 @@ using MEC;
 using Mirror;
 using Mistaken.API;
 using Mistaken.API.Diagnostics;
+using Mistaken.API.Extensions;
 using UnityEngine;
 
 namespace Mistaken.ColorfulEZ
@@ -38,14 +39,12 @@ namespace Mistaken.ColorfulEZ
         {
             Events.Handlers.CustomEvents.GeneratedCache += this.CustomEvents_GeneratedCache;
             Exiled.Events.Handlers.Player.Verified += this.Player_Verified;
-            Exiled.Events.Handlers.Player.ChangingSpectatedPlayer += this.Player_ChangingSpectatedPlayer;
         }
 
         public override void OnDisable()
         {
             Events.Handlers.CustomEvents.GeneratedCache -= this.CustomEvents_GeneratedCache;
             Exiled.Events.Handlers.Player.Verified -= this.Player_Verified;
-            Exiled.Events.Handlers.Player.ChangingSpectatedPlayer -= this.Player_ChangingSpectatedPlayer;
         }
 
         internal static ColorfulHandler Instance { get; private set; }
@@ -140,13 +139,6 @@ namespace Mistaken.ColorfulEZ
         {
             foreach (var item in this.rooms)
                 this.UnloadRoomFor(ev.Player, item);
-        }
-
-        private void Player_ChangingSpectatedPlayer(Exiled.Events.EventArgs.ChangingSpectatedPlayerEventArgs ev)
-        {
-            if (ev.NewTarget is null)
-                return;
-            this.UpdateFor(ev.Player, API.Utilities.Room.Get(ev.NewTarget?.CurrentRoom));
         }
 
         private IEnumerator<float> LoadAssets()
@@ -286,7 +278,9 @@ namespace Mistaken.ColorfulEZ
 
                 foreach (var player in RealPlayers.List.Where(x => !x.GetEffectActive<Scp207>() && !x.GetEffectActive<MovementBoost>() && x.Role != RoleType.Scp173 && x.Role != RoleType.Scp096 && !x.NoClipEnabled))
                 {
-                    if (player.IsAlive)
+                    if (player.IsDead)
+                        this.UpdateForSpectator(player);
+                    else
                         this.UpdateForAlive(player);
                 }
             }
@@ -358,6 +352,11 @@ namespace Mistaken.ColorfulEZ
             var room = API.Utilities.Room.Get(player.CurrentRoom);
 
             this.UpdateFor(player, room);
+        }
+
+        private void UpdateForSpectator(Player spectator)
+        {
+            this.UpdateFor(spectator, API.Utilities.Room.Get(spectator.GetSpectatedPlayer()?.CurrentRoom));
         }
 
         private void LoadRoomFor(Player player, API.Utilities.Room room)
