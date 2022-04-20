@@ -13,11 +13,11 @@ using CustomPlayerEffects;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Interfaces;
-using Footprinting;
 using MEC;
 using Mirror;
 using Mistaken.API;
 using Mistaken.API.Diagnostics;
+using Mistaken.API.Extensions;
 using UnityEngine;
 
 namespace Mistaken.ColorfulEZ
@@ -37,13 +37,13 @@ namespace Mistaken.ColorfulEZ
 
         public override void OnEnable()
         {
-            Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
+            Events.Handlers.CustomEvents.GeneratedCache += this.CustomEvents_GeneratedCache;
             Exiled.Events.Handlers.Player.Verified += this.Player_Verified;
         }
 
         public override void OnDisable()
         {
-            Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
+            Events.Handlers.CustomEvents.GeneratedCache -= this.CustomEvents_GeneratedCache;
             Exiled.Events.Handlers.Player.Verified -= this.Player_Verified;
         }
 
@@ -115,7 +115,7 @@ namespace Mistaken.ColorfulEZ
 
         private ushort spawnedAmount;
 
-        private void Server_WaitingForPlayers()
+        private void CustomEvents_GeneratedCache()
         {
             this.roomsObjects.Clear();
             this.lastRooms.Clear();
@@ -162,7 +162,7 @@ namespace Mistaken.ColorfulEZ
                     continue;
                 }
 
-                foreach (var room in Map.Rooms.Where(x => x.Type == PrefabConversion[file]))
+                foreach (var room in Room.List.Where(x => x.Type == PrefabConversion[file]))
                 {
                     if (room.Type == RoomType.HczEzCheckpoint)
                     {
@@ -356,7 +356,7 @@ namespace Mistaken.ColorfulEZ
 
         private void UpdateForSpectator(Player spectator)
         {
-            this.UpdateFor(spectator, API.Utilities.Room.Get(spectator.SpectatedPlayer?.CurrentRoom));
+            this.UpdateFor(spectator, API.Utilities.Room.Get(spectator.GetSpectatedPlayer()?.CurrentRoom));
         }
 
         private void LoadRoomFor(Player player, API.Utilities.Room room)

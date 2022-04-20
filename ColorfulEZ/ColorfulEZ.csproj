@@ -38,6 +38,7 @@
     <Reference Include="Exiled.API" HintPath="$(MISTAKEN_REFERENCES)\Exiled.API.dll" />
     <Reference Include="Exiled.Events" HintPath="$(MISTAKEN_REFERENCES)\Exiled.Events.dll" />
     <Reference Include="Mistaken.Updater" HintPath="$(MISTAKEN_REFERENCES)\Mistaken.Updater.dll" />
+    <Reference Include="Mistaken.Events" HintPath="$(MISTAKEN_REFERENCES)\Mistaken.Events.dll" />
     <Reference Include="0Mistaken.API" HintPath="$(MISTAKEN_REFERENCES)\0Mistaken.API.dll" />
     <Reference Include="Mistaken.RoundLogger" HintPath="$(MISTAKEN_REFERENCES)\Mistaken.RoundLogger.dll" />
     <Reference Include="UnityEngine.AssetBundleModule" HintPath="$(MISTAKEN_REFERENCES)\UnityEngine.AssetBundleModule.dll" />
