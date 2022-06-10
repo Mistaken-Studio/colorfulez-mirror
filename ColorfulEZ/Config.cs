@@ -23,6 +23,12 @@ namespace Mistaken.ColorfulEZ
         public bool VerbouseOutput { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether rainbow mode should be enabled.
+        /// </summary>
+        [Description("If true then entrance room's 'stripes' will change color rapidly")]
+        public bool RainbowMode { get; set; } = false;
+
+        /// <summary>
         /// Gets or sets time for refreshing objects.
         /// </summary>
         [Description("Sets time for refreshing objects")]

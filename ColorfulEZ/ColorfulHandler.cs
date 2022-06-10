@@ -37,13 +37,13 @@ namespace Mistaken.ColorfulEZ
 
         public override void OnEnable()
         {
-            Events.Handlers.CustomEvents.GeneratedCache += this.CustomEvents_GeneratedCache;
+            Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
             Exiled.Events.Handlers.Player.Verified += this.Player_Verified;
         }
 
         public override void OnDisable()
         {
-            Events.Handlers.CustomEvents.GeneratedCache -= this.CustomEvents_GeneratedCache;
+            Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
             Exiled.Events.Handlers.Player.Verified -= this.Player_Verified;
         }
 
@@ -115,7 +115,7 @@ namespace Mistaken.ColorfulEZ
 
         private ushort spawnedAmount;
 
-        private void CustomEvents_GeneratedCache()
+        private void Server_WaitingForPlayers()
         {
             this.roomsObjects.Clear();
             this.lastRooms.Clear();
@@ -133,6 +133,9 @@ namespace Mistaken.ColorfulEZ
 
             this.RunCoroutine(this.UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers");
             this.RunCoroutine(this.UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers");
+
+            if (PluginHandler.Instance.Config.RainbowMode)
+                this.RunCoroutine(this.UpdateColor(), "colorfulez_updatecolor");
         }
 
         private void Player_Verified(Exiled.Events.EventArgs.VerifiedEventArgs ev)
@@ -276,8 +279,10 @@ namespace Mistaken.ColorfulEZ
             {
                 yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.NormalRefreshTime);
 
-                foreach (var player in RealPlayers.List.Where(x => !x.GetEffectActive<Scp207>() && !x.GetEffectActive<MovementBoost>() && x.Role != RoleType.Scp173 && x.Role != RoleType.Scp096 && !x.NoClipEnabled))
+                foreach (var player in RealPlayers.List)
                 {
+                    if (player.GetEffectActive<Scp207>() || player.GetEffectActive<MovementBoost>() || player.Role == RoleType.Scp173 || player.Role == RoleType.Scp096 || player.NoClipEnabled)
+                        continue;
                     if (player.IsDead)
                         this.UpdateForSpectator(player);
                     else
@@ -292,8 +297,11 @@ namespace Mistaken.ColorfulEZ
             {
                 yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.FastRefreshTime);
 
-                foreach (var player in RealPlayers.List.Where(x => x.GetEffectActive<Scp207>() || x.GetEffectActive<MovementBoost>() || x.Role == RoleType.Scp173 || x.Role == RoleType.Scp096 || x.NoClipEnabled))
-                    this.UpdateForAlive(player);
+                foreach (var player in RealPlayers.List)
+                {
+                    if (player.GetEffectActive<Scp207>() || player.GetEffectActive<MovementBoost>() || player.Role == RoleType.Scp173 || player.Role == RoleType.Scp096 || player.NoClipEnabled)
+                        this.UpdateForAlive(player);
+                }
             }
         }
 
@@ -350,7 +358,6 @@ namespace Mistaken.ColorfulEZ
         private void UpdateForAlive(Player player)
         {
             var room = API.Utilities.Room.Get(player.CurrentRoom);
-
             this.UpdateFor(player, room);
         }
 
@@ -408,7 +415,7 @@ namespace Mistaken.ColorfulEZ
             float hue = 0;
             while (true)
             {
-                yield return Timing.WaitForSeconds(0.01f);
+                yield return Timing.WaitForSeconds(0.1f);
                 this.ChangeObjectsColor(Color.HSVToRGB(hue / 360f, 1f, 1f, true));
 
                 hue += 2f;
