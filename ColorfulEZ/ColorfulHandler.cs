@@ -110,10 +110,13 @@ namespace Mistaken.ColorfulEZ
 
         public static void RunCoroutines()
         {
-            if (CoroutineHandles.Any(x => !x.IsRunning))
-                Timing.KillCoroutines(CoroutineHandles.ToArray());
-            else
-                return;
+            if (CoroutineHandles.Count != 0)
+            {
+                if (CoroutineHandles.Any(x => !x.IsRunning))
+                    Timing.KillCoroutines(CoroutineHandles.ToArray());
+                else
+                    return;
+            }
 
             CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers"));
             CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers"));
