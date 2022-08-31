@@ -10,45 +10,22 @@ using Mistaken.Updater.Config;
 
 namespace Mistaken.ColorfulEZ
 {
-    /// <inheritdoc/>
-    public class Config : IAutoUpdatableConfig
+    internal class Config : IAutoUpdatableConfig
     {
-        /// <inheritdoc/>
         public bool IsEnabled { get; set; } = true;
 
-        /// <summary>
-        /// Gets or sets a value indicating whether debug should be displayed.
-        /// </summary>
         [Description("If true then debug will be displayed")]
         public bool VerbouseOutput { get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether rainbow mode should be enabled.
-        /// </summary>
-        [Description("If true then entrance room's 'stripes' will change color rapidly")]
+        [Description("If true then entrance zone rooms 'stripes' will change color rapidly")]
         public bool RainbowMode { get; set; } = false;
 
-        /// <summary>
-        /// Gets or sets time for refreshing objects.
-        /// </summary>
-        [Description("Sets time for refreshing objects")]
-        public float NormalRefreshTime { get; set; } = 1f;
+        [Description("Sets time between updating room's objects for players (in miliseconds)")]
+        public float NormalRefreshTime { get; set; } = 1.5f;
 
-        /// <summary>
-        /// Gets or sets time for refreshing objects.
-        /// </summary>
-        [Description("Sets time for refreshing objects (noclip, 173, 096, 207 effect)")]
+        [Description("Sets time between updating room's objects for players (in miliseconds)")]
         public float FastRefreshTime { get; set; } = 0.5f;
 
-        /// <summary>
-        /// Gets or sets path to assets inside the Plugins folder.
-        /// </summary>
-        [Description("Sets path to assets inside the Plugins folder")]
-        public string AssetsPath { get; set; } = "ColorfulAssets";
-
-        /// <summary>
-        /// Gets or sets colors for stripes.
-        /// </summary>
         [Description("Defines colors stripes can be")]
         public List<string> Colors { get; set; } = new List<string>()
         {
@@ -67,8 +44,7 @@ namespace Mistaken.ColorfulEZ
             "#FFFFFF", // White
         };
 
-        /// <inheritdoc/>
         [Description("Auto Update Settings")]
-        public System.Collections.Generic.Dictionary<string, string> AutoUpdateConfig { get; set; }
+        public Dictionary<string, string> AutoUpdateConfig { get; set; }
     }
 }

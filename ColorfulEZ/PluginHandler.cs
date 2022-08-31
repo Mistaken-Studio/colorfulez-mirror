@@ -10,25 +10,18 @@ using Exiled.API.Features;
 
 namespace Mistaken.ColorfulEZ
 {
-    /// <inheritdoc/>
-    public class PluginHandler : Plugin<Config>
+    internal class PluginHandler : Plugin<Config>
     {
-        /// <inheritdoc/>
         public override string Author => "Mistaken Devs";
 
-        /// <inheritdoc/>
         public override string Name => "ColorfulEntranceZone";
 
-        /// <inheritdoc/>
         public override string Prefix => "MColorfulEZ";
 
-        /// <inheritdoc/>
         public override PluginPriority Priority => PluginPriority.Default;
 
-        /// <inheritdoc/>
-        public override Version RequiredExiledVersion => new Version(5, 0, 0);
+        public override Version RequiredExiledVersion => new Version(5, 2, 2);
 
-        /// <inheritdoc/>
         public override void OnEnabled()
         {
             Instance = this;
@@ -40,10 +33,9 @@ namespace Mistaken.ColorfulEZ
             base.OnEnabled();
         }
 
-        /// <inheritdoc/>
         public override void OnDisabled()
         {
-            ColorfulHandler.Instance.RemoveObjects();
+            ColorfulHandler.RemoveObjects();
 
             API.Diagnostics.Module.OnDisable(this);
 

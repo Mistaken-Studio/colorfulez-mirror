@@ -6,13 +6,17 @@
 
 using CommandSystem;
 using Mistaken.API.Commands;
+using UnityEngine;
 
 namespace Mistaken.ColorfulEZ
 {
-    [CommandSystem.CommandHandler(typeof(CommandSystem.RemoteAdminCommandHandler))]
+    [CommandHandler(typeof(RemoteAdminCommandHandler))]
+    [CommandHandler(typeof(GameConsoleCommandHandler))]
     internal class CommandHandler : IBetterCommand
     {
-        public override string Command => "Colorfulez";
+        public override string Command => "colorfulez";
+
+        public override string[] Aliases => new string[] { "cez" };
 
         public override string[] Execute(ICommandSender sender, string[] args, out bool success)
         {
@@ -20,33 +24,63 @@ namespace Mistaken.ColorfulEZ
             if (args.Length == 0)
                 return this.GetUsage();
 
-            switch (args[0])
+            switch (args[0].ToLower())
             {
-                case string i when i == "changecolor" || i == "cc":
+                case "changecolor":
+                case "cc":
                     {
                         if (args.Length < 2)
                             return new string[] { "You must provide color in hex or name" };
-                        if (!UnityEngine.ColorUtility.TryParseHtmlString(args[1], out var color))
-                            return new string[] { "Invalid parameters" };
-                        if (ColorfulHandler.Instance.ChangeObjectsColor(color))
+                        if (!ColorUtility.TryParseHtmlString(args[1], out var color))
+                            return new string[] { "Invalid parameter" };
+                        try
                         {
-                            success = true;
-                            return new string[] { "Success" };
+                            ColorfulHandler.ChangeObjectsColor(color);
                         }
-
-                        return new string[] { "Failed to change color" };
+                        catch (System.Exception ex)
+                        {
+                            Debug.LogError(ex);
+                            return new string[] { ex.ToString() };
+                        }
                     }
 
+                    break;
+
+                case "reloadassets":
+                case "ra":
+                    {
+                        try
+                        {
+                            ColorfulHandler.RemoveObjects();
+
+                            if (ColorfulHandler.LoadAssets() == 0)
+                                return new string[] { "Couldn't spawn any prefab. Prefabs not loaded!" };
+
+                            ColorfulHandler.SpawnPrefabs();
+                            ColorfulHandler.RunCoroutines();
+                        }
+                        catch (System.Exception ex)
+                        {
+                            Debug.LogError(ex);
+                            return new string[] { ex.ToString() };
+                        }
+                    }
+
+                    break;
                 default:
                     return this.GetUsage();
             }
+
+            success = true;
+            return new string[] { "Done" };
         }
 
         private string[] GetUsage()
         {
             return new string[]
             {
-                "Colorfulez changecolor - changes the color of objects spawned by ColorfulEZ",
+                "colorfulez changecolor - changes the color of objects spawned by ColorfulEZ",
+                "colorfulez reloadassets - reload's all assets used by ColorfulEZ",
             };
         }
     }
