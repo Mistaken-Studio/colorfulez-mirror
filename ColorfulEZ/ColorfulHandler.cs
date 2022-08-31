@@ -404,8 +404,6 @@ namespace Mistaken.ColorfulEZ
             }
         }
 
-        private static CoroutineHandle[] handles = new CoroutineHandle[2];
-
         private void Server_WaitingForPlayers()
         {
             RoomsObjects.Clear();
