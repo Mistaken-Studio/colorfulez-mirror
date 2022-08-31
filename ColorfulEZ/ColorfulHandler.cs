@@ -425,13 +425,6 @@ namespace Mistaken.ColorfulEZ
             Rooms.Clear();
             spawnedAmount = 0;
 
-            foreach (var room in API.Utilities.Room.Rooms.Values)
-            {
-                if (!PrefabConversion.ContainsValue(room.ExiledRoom.Type))
-                    continue;
-                Rooms.Add(room);
-            }
-
             if (Prefabs.Count != PrefabConversion.Count)
             {
                 if (LoadAssets() == 0)
@@ -439,6 +432,13 @@ namespace Mistaken.ColorfulEZ
                     Debug.LogError("[ColorfulEZ]: Couldn't spawn any prefab. Prefabs failed to load!");
                     return;
                 }
+            }
+
+            foreach (var room in API.Utilities.Room.Rooms.Values)
+            {
+                if (!PrefabConversion.ContainsValue(room.ExiledRoom.Type))
+                    continue;
+                Rooms.Add(room);
             }
 
             SpawnPrefabs();
