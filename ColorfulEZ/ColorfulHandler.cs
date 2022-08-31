@@ -430,12 +430,12 @@ namespace Mistaken.ColorfulEZ
             }
 
             if (Prefabs.Count != PrefabConversion.Count)
-                LoadAssets();
-
-            if (Prefabs.Count == 0)
             {
-                Debug.LogError("[ColorfulEZ]: Couldn't spawn any prefab. Prefabs not loaded!");
-                return;
+                if (LoadAssets() == 0)
+                {
+                    Debug.LogError("[ColorfulEZ]: Couldn't spawn any prefab. Prefabs failed to load!");
+                    return;
+                }
             }
 
             SpawnPrefabs();
