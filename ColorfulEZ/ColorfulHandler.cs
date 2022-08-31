@@ -25,9 +25,11 @@ namespace Mistaken.ColorfulEZ
     {
         public static readonly string AssetsPath = Path.Combine(Paths.Plugins, "AssetBoundle");
 
+        public static readonly HashSet<CoroutineHandle> CoroutineHandles = new HashSet<CoroutineHandle>();
+
         public static ColorfulHandler Instance { get; private set; }
 
-        public static void LoadAssets()
+        public static int LoadAssets()
         {
             Prefabs.Clear();
 
@@ -35,7 +37,7 @@ namespace Mistaken.ColorfulEZ
             if (!File.Exists(path))
             {
                 Debug.LogError("[ColorfulEZ]: Could not find AssetBoundle for this plugin!");
-                return;
+                return 0;
             }
 
             AssetBundle bundle = AssetBundle.LoadFromFile(path);
@@ -64,16 +66,11 @@ namespace Mistaken.ColorfulEZ
                 Instance.Log.Warn($"Some prefabs were not loaded!");
 
             bundle.Unload(false);
+            return Prefabs.Count;
         }
 
         public static void SpawnPrefabs()
         {
-            if (Prefabs.Count == 0)
-            {
-                Debug.LogError("[ColorfulEZ]: Couldn't spawn any prefab. Prefabs not loaded!");
-                return;
-            }
-
             foreach (var prefab in Prefabs)
             {
                 foreach (var room in Room.List.ToArray())
@@ -109,6 +106,20 @@ namespace Mistaken.ColorfulEZ
             }
 
             ChangeObjectsColor(color);
+        }
+
+        public static void RunCoroutines()
+        {
+            if (CoroutineHandles.Any(x => !x.IsRunning))
+                Timing.KillCoroutines(CoroutineHandles.ToArray());
+            else
+                return;
+
+            CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers"));
+            CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers"));
+
+            if (PluginHandler.Instance.Config.RainbowMode)
+                CoroutineHandles.Add(Instance.RunCoroutine(UpdateColor(), "colorfulez_updatecolor"));
         }
 
         public static void ChangeObjectsColor(Color color)
@@ -421,13 +432,14 @@ namespace Mistaken.ColorfulEZ
             if (Prefabs.Count != PrefabConversion.Count)
                 LoadAssets();
 
+            if (Prefabs.Count == 0)
+            {
+                Debug.LogError("[ColorfulEZ]: Couldn't spawn any prefab. Prefabs not loaded!");
+                return;
+            }
+
             SpawnPrefabs();
-
-            this.RunCoroutine(UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers", true);
-            this.RunCoroutine(UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers", true);
-
-            if (PluginHandler.Instance.Config.RainbowMode)
-                this.RunCoroutine(UpdateColor(), "colorfulez_updatecolor", true);
+            RunCoroutines();
         }
 
         private void Player_Verified(Exiled.Events.EventArgs.VerifiedEventArgs ev)

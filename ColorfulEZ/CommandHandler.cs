@@ -52,8 +52,12 @@ namespace Mistaken.ColorfulEZ
                         try
                         {
                             ColorfulHandler.RemoveObjects();
-                            ColorfulHandler.LoadAssets();
+
+                            if (ColorfulHandler.LoadAssets() == 0)
+                                return new string[] { "Couldn't spawn any prefab. Prefabs not loaded!" };
+
                             ColorfulHandler.SpawnPrefabs();
+                            ColorfulHandler.RunCoroutines();
                         }
                         catch (System.Exception ex)
                         {
