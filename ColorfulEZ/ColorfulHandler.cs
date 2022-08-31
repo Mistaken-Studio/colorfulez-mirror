@@ -259,7 +259,7 @@ namespace Mistaken.ColorfulEZ
 
                 foreach (var player in RealPlayers.List)
                 {
-                    if (player.GetEffectActive<Scp207>() || player.GetEffectActive<MovementBoost>() || player.Role == RoleType.Scp173 || player.Role == RoleType.Scp096 || player.NoClipEnabled)
+                    if (player.GetEffectActive<Scp207>() || player.GetEffectActive<MovementBoost>() || player.Role.Type == RoleType.Scp173 || player.Role.Type == RoleType.Scp096 || player.NoClipEnabled)
                         continue;
                     if (player.IsDead)
                         UpdateForSpectator(player);
@@ -277,7 +277,7 @@ namespace Mistaken.ColorfulEZ
 
                 foreach (var player in RealPlayers.List)
                 {
-                    if (player.GetEffectActive<Scp207>() || player.GetEffectActive<MovementBoost>() || player.Role == RoleType.Scp173 || player.Role == RoleType.Scp096 || player.NoClipEnabled)
+                    if (player.GetEffectActive<Scp207>() || player.GetEffectActive<MovementBoost>() || player.Role.Type == RoleType.Scp173 || player.Role.Type == RoleType.Scp096 || player.NoClipEnabled)
                         UpdateForAlive(player);
                 }
             }
