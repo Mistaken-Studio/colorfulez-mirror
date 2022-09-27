@@ -3,6 +3,7 @@
 ################################################################################
 
 /.vs
+/.idea
 /ColorfulEZ/obj/Debug
 /ColorfulEZ/bin/Debug
 /packages/StyleCop.Analyzers.1.1.118
