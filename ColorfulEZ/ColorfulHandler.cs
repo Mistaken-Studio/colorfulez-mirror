@@ -36,7 +36,7 @@ namespace Mistaken.ColorfulEZ
             string path = Path.Combine(AssetsPath, "colorfulez");
             if (!File.Exists(path))
             {
-                Debug.LogError("[ColorfulEZ]: Could not find AssetBoundle for this plugin!");
+                Debug.LogError("[ColorfulEZ]: Could not find AssetBundle for this plugin!");
                 return 0;
             }
 
@@ -48,7 +48,8 @@ namespace Mistaken.ColorfulEZ
                     Instance.Log.Error("Failed to load prefab. Prefab was null");
                     continue;
                 }
-                else if (!PrefabConversion.ContainsKey(prefab.name))
+
+                if (!PrefabConversion.ContainsKey(prefab.name))
                 {
                     Instance.Log.Info($"Skipped loading: {prefab.name}. Prefab not found in Dictionary");
                     continue;
@@ -61,9 +62,9 @@ namespace Mistaken.ColorfulEZ
             }
 
             if (PrefabConversion.Count == Prefabs.Count)
-                Instance.Log.Info($"Successfully loaded all assets!");
+                Instance.Log.Info("Successfully loaded all assets!");
             else
-                Instance.Log.Warn($"Some prefabs were not loaded!");
+                Instance.Log.Warn("Some prefabs were not loaded!");
 
             bundle.Unload(false);
             return Prefabs.Count;
@@ -118,8 +119,8 @@ namespace Mistaken.ColorfulEZ
                     return;
             }
 
-            CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers"));
-            CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers"));
+            // CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers"));
+            // CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers"));
 
             if (PluginHandler.Instance.Config.RainbowMode)
                 CoroutineHandles.Add(Instance.RunCoroutine(UpdateColor(), "colorfulez_updatecolor"));
@@ -167,14 +168,14 @@ namespace Mistaken.ColorfulEZ
 
         public override void OnEnable()
         {
-            Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
-            Exiled.Events.Handlers.Player.Verified += this.Player_Verified;
+            Exiled.Events.Handlers.Server.WaitingForPlayers += Server_WaitingForPlayers;
+            Exiled.Events.Handlers.Player.Verified += Player_Verified;
         }
 
         public override void OnDisable()
         {
-            Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
-            Exiled.Events.Handlers.Player.Verified -= this.Player_Verified;
+            Exiled.Events.Handlers.Server.WaitingForPlayers -= Server_WaitingForPlayers;
+            Exiled.Events.Handlers.Player.Verified -= Player_Verified;
         }
 
         private static readonly Dictionary<string, RoomType> PrefabConversion = new Dictionary<string, RoomType>()
@@ -215,7 +216,14 @@ namespace Mistaken.ColorfulEZ
                 gameObject = new GameObject();
             else
             {
-                toy = MapPlus.SpawnPrimitive(PrimitiveType.Quad, parent, Color.gray, false);
+                toy = API.Toys.ToyHandler.SpawnPrimitive(
+                    API.Toys.ToyHandler.GetPrimitiveType(meshFilter),
+                    parent,
+                    toConvert.GetComponent<MeshRenderer>().material.color,
+                    true,
+                    false,
+                    null,
+                    null);
                 gameObject = toy.gameObject;
             }
 
@@ -229,22 +237,7 @@ namespace Mistaken.ColorfulEZ
 
             toy?.UpdatePositionServer();
 
-            var meshRenderer = toConvert.GetComponent<MeshRenderer>();
-            if (!(meshFilter is null))
-            {
-                toy.NetworkMaterialColor = meshRenderer.material.color;
-                string mesh = meshFilter.mesh.name.Split(' ')[0];
-                Instance.Log.Debug($"Mesh: {mesh}", PluginHandler.Instance.Config.VerbouseOutput);
-                if (System.Enum.TryParse<PrimitiveType>(mesh, out var type))
-                    toy.NetworkPrimitiveType = type;
-                else
-                {
-                    Instance.Log.Error("PrimitiveType was none!");
-                    return null;
-                }
-            }
-
-            for (int i = 0; i < toConvert.transform.childCount; i++)
+            for (var i = 0; i < toConvert.transform.childCount; i++)
             {
                 var child = toConvert.transform.GetChild(i);
                 ConvertToToy(child.gameObject, gameObject.transform, room);
@@ -265,6 +258,7 @@ namespace Mistaken.ColorfulEZ
             return gameObject;
         }
 
+        #region Sync Logic
         private static IEnumerator<float> UpdateObjectsForPlayers()
         {
             while (true)
@@ -417,8 +411,9 @@ namespace Mistaken.ColorfulEZ
                     hue = 0;
             }
         }
+        #endregion
 
-        private void Server_WaitingForPlayers()
+        private static void Server_WaitingForPlayers()
         {
             RoomsObjects.Clear();
             LastRooms.Clear();
@@ -445,10 +440,10 @@ namespace Mistaken.ColorfulEZ
             RunCoroutines();
         }
 
-        private void Player_Verified(Exiled.Events.EventArgs.VerifiedEventArgs ev)
+        private static void Player_Verified(Exiled.Events.EventArgs.VerifiedEventArgs ev)
         {
-            foreach (var item in Rooms)
-                UnloadRoomFor(ev.Player, item);
+            // foreach (var item in Rooms)
+            //    UnloadRoomFor(ev.Player, item);
         }
     }
 }
