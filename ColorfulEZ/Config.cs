@@ -20,12 +20,6 @@ namespace Mistaken.ColorfulEZ
         [Description("If true then entrance zone rooms 'stripes' will change color rapidly")]
         public bool RainbowMode { get; set; } = false;
 
-        [Description("Sets time between updating room's objects for players (in miliseconds)")]
-        public float NormalRefreshTime { get; set; } = 1.5f;
-
-        [Description("Sets time between updating room's objects for players (in miliseconds)")]
-        public float FastRefreshTime { get; set; } = 0.5f;
-
         [Description("Defines colors stripes can be")]
         public List<string> Colors { get; set; } = new List<string>()
         {

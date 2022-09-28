@@ -10,19 +10,21 @@ using UnityEngine;
 
 namespace Mistaken.ColorfulEZ
 {
+    // ReSharper disable StringLiteralTypo
+    // ReSharper disable once UnusedMember.Global
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     [CommandHandler(typeof(GameConsoleCommandHandler))]
     internal class CommandHandler : IBetterCommand
     {
         public override string Command => "colorfulez";
 
-        public override string[] Aliases => new string[] { "cez" };
+        public override string[] Aliases => new[] { "cez" };
 
         public override string[] Execute(ICommandSender sender, string[] args, out bool success)
         {
             success = false;
             if (args.Length == 0)
-                return this.GetUsage();
+                return GetUsage();
 
             switch (args[0].ToLower())
             {
@@ -30,9 +32,9 @@ namespace Mistaken.ColorfulEZ
                 case "cc":
                     {
                         if (args.Length < 2)
-                            return new string[] { "You must provide color in hex or name" };
+                            return new[] { "You must provide color in hex or name" };
                         if (!ColorUtility.TryParseHtmlString(args[1], out var color))
-                            return new string[] { "Invalid parameter" };
+                            return new[] { "Invalid parameter" };
                         try
                         {
                             ColorfulHandler.ChangeObjectsColor(color);
@@ -40,11 +42,11 @@ namespace Mistaken.ColorfulEZ
                         catch (System.Exception ex)
                         {
                             Debug.LogError(ex);
-                            return new string[] { ex.ToString() };
+                            return new[] { ex.ToString() };
                         }
-                    }
 
-                    break;
+                        break;
+                    }
 
                 case "reloadassets":
                 case "ra":
@@ -54,30 +56,30 @@ namespace Mistaken.ColorfulEZ
                             ColorfulHandler.RemoveObjects();
 
                             if (ColorfulHandler.LoadAssets() == 0)
-                                return new string[] { "Couldn't spawn any prefab. Prefabs not loaded!" };
+                                return new[] { "Couldn't spawn any prefab. Prefabs not loaded!" };
 
                             ColorfulHandler.SpawnPrefabs();
-                            ColorfulHandler.RunCoroutines();
                         }
                         catch (System.Exception ex)
                         {
                             Debug.LogError(ex);
-                            return new string[] { ex.ToString() };
+                            return new[] { ex.ToString() };
                         }
+
+                        break;
                     }
 
-                    break;
                 default:
-                    return this.GetUsage();
+                    return GetUsage();
             }
 
             success = true;
-            return new string[] { "Done" };
+            return new[] { "Done" };
         }
 
-        private string[] GetUsage()
+        private static string[] GetUsage()
         {
-            return new string[]
+            return new[]
             {
                 "colorfulez changecolor - changes the color of objects spawned by ColorfulEZ",
                 "colorfulez reloadassets - reload's all assets used by ColorfulEZ",

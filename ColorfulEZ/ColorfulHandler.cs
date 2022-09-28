@@ -4,28 +4,24 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AdminToys;
-using CustomPlayerEffects;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Interfaces;
 using MEC;
 using Mirror;
-using Mistaken.API;
-using Mistaken.API.Extensions;
 using UnityEngine;
 
+// ReSharper disable SuggestVarOrType_SimpleTypes
+// ReSharper disable SuggestVarOrType_BuiltInTypes
 namespace Mistaken.ColorfulEZ
 {
     internal class ColorfulHandler : API.Diagnostics.Module
     {
         public static readonly string AssetsPath = Path.Combine(Paths.Plugins, "AssetBoundle");
-
-        public static readonly HashSet<CoroutineHandle> CoroutineHandles = new HashSet<CoroutineHandle>();
 
         public static ColorfulHandler Instance { get; private set; }
 
@@ -55,10 +51,9 @@ namespace Mistaken.ColorfulEZ
                     continue;
                 }
 
-                if (Prefabs.Add(prefab))
-                    Instance.Log.Info($"Successfully loaded: {prefab.name}");
-                else
-                    Instance.Log.Info($"Skipped loading: {prefab.name}. Prefab was already loaded");
+                Instance.Log.Info(Prefabs.Add(prefab)
+                    ? $"Successfully loaded: {prefab.name}"
+                    : $"Skipped loading: {prefab.name}. Prefab was already loaded");
             }
 
             if (PrefabConversion.Count == Prefabs.Count)
@@ -72,6 +67,7 @@ namespace Mistaken.ColorfulEZ
 
         public static void SpawnPrefabs()
         {
+            colorSyncMeshRenderer = new GameObject().AddComponent<MeshRenderer>();
             foreach (var prefab in Prefabs)
             {
                 foreach (var room in Room.List.ToArray())
@@ -83,25 +79,25 @@ namespace Mistaken.ColorfulEZ
                     {
                         var checkpoint = room.transform.Find("Checkpoint");
 
-                        var obj = ConvertToToy(prefab, checkpoint, room);
+                        var obj = ConvertToToy(prefab, checkpoint);
                         obj.transform.localPosition = Vector3.zero;
                         obj.transform.localRotation = Quaternion.identity;
                     }
                     else
                     {
-                        var obj = ConvertToToy(prefab, room.transform, room);
+                        var obj = ConvertToToy(prefab, room.transform);
                         obj.transform.localPosition = Vector3.zero;
                         obj.transform.localRotation = Quaternion.identity;
                     }
                 }
             }
 
-            Instance.Log.Debug($"Spawned {spawnedAmount} objects", PluginHandler.Instance.Config.VerbouseOutput);
+            Instance.Log.Debug($"Spawned {Spawned.Count} objects", PluginHandler.Instance.Config.VerbouseOutput);
 
-            Color color = Color.black;
+            var color = Color.black;
             if (PluginHandler.Instance.Config.Colors != null)
             {
-                var rawColor = PluginHandler.Instance.Config.Colors[UnityEngine.Random.Range(0, PluginHandler.Instance.Config.Colors.Count)];
+                var rawColor = PluginHandler.Instance.Config.Colors[Random.Range(0, PluginHandler.Instance.Config.Colors.Count)];
                 if (!ColorUtility.TryParseHtmlString(rawColor, out color))
                     Instance.Log.Warn($"Invalid color \"{rawColor}\"");
             }
@@ -109,51 +105,23 @@ namespace Mistaken.ColorfulEZ
             ChangeObjectsColor(color);
         }
 
-        public static void RunCoroutines()
-        {
-            if (CoroutineHandles.Count != 0)
-            {
-                if (CoroutineHandles.Any(x => !x.IsRunning))
-                    Timing.KillCoroutines(CoroutineHandles.ToArray());
-                else
-                    return;
-            }
-
-            // CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForPlayers(), "colorfulez_updateobjectsforplayers"));
-            // CoroutineHandles.Add(Instance.RunCoroutine(UpdateObjectsForFastPlayers(), "colorfulez_updateobjectsforfastplayers"));
-
-            if (PluginHandler.Instance.Config.RainbowMode)
-                CoroutineHandles.Add(Instance.RunCoroutine(UpdateColor(), "colorfulez_updatecolor"));
-        }
-
         public static void ChangeObjectsColor(Color color)
         {
-            foreach (var values in RoomsObjects.Values.ToArray())
-            {
-                foreach (var netid in values)
-                {
-                    if (netid is null)
-                        continue;
-
-                    netid.GetComponent<PrimitiveObjectToy>().NetworkMaterialColor = color;
-                }
-            }
+            colorSyncMeshRenderer.material.color = color;
         }
 
         public static void RemoveObjects()
         {
-            foreach (var pairs in RoomsObjects.ToArray())
+            foreach (var networkIdentity in Spawned.ToArray())
             {
-                foreach (var netid in pairs.Value.ToArray())
-                {
-                    if (netid is null)
-                        continue;
+                if (networkIdentity is null)
+                    continue;
 
-                    NetworkServer.Destroy(netid.gameObject);
-                }
-
-                RoomsObjects.Remove(pairs.Key);
+                NetworkServer.Destroy(networkIdentity.gameObject);
             }
+
+            if (!(colorSyncMeshRenderer is null))
+                Object.Destroy(colorSyncMeshRenderer);
         }
 
         public ColorfulHandler(IPlugin<IConfig> plugin)
@@ -168,14 +136,12 @@ namespace Mistaken.ColorfulEZ
 
         public override void OnEnable()
         {
-            Exiled.Events.Handlers.Server.WaitingForPlayers += Server_WaitingForPlayers;
-            Exiled.Events.Handlers.Player.Verified += Player_Verified;
+            Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
         }
 
         public override void OnDisable()
         {
-            Exiled.Events.Handlers.Server.WaitingForPlayers -= Server_WaitingForPlayers;
-            Exiled.Events.Handlers.Player.Verified -= Player_Verified;
+            Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
         }
 
         private static readonly Dictionary<string, RoomType> PrefabConversion = new Dictionary<string, RoomType>()
@@ -198,15 +164,15 @@ namespace Mistaken.ColorfulEZ
         };
 
         private static readonly HashSet<GameObject> Prefabs = new HashSet<GameObject>();
-        private static readonly HashSet<API.Utilities.Room> Rooms = new HashSet<API.Utilities.Room>();
-        private static readonly Dictionary<Room, HashSet<NetworkIdentity>> RoomsObjects = new Dictionary<Room, HashSet<NetworkIdentity>>();
-        private static readonly Dictionary<Player, API.Utilities.Room> LastRooms = new Dictionary<Player, API.Utilities.Room>();
-        private static ushort spawnedAmount;
+        private static readonly HashSet<NetworkIdentity> Spawned = new HashSet<NetworkIdentity>();
+        private static MeshRenderer colorSyncMeshRenderer;
 
-        private static GameObject ConvertToToy(GameObject toConvert, Transform parent, Room room)
+        private static GameObject ConvertToToy(GameObject toConvert, Transform parent)
         {
             if (!toConvert.activeSelf)
                 return null;
+
+            var ignore = toConvert.name.Contains("(ignore)");
 
             Instance.Log.Debug($"Loading {toConvert.name}", PluginHandler.Instance.Config.VerbouseOutput);
             var meshFilter = toConvert.GetComponent<MeshFilter>();
@@ -223,8 +189,10 @@ namespace Mistaken.ColorfulEZ
                     true,
                     false,
                     null,
-                    null);
+                    ignore ? null : colorSyncMeshRenderer);
                 gameObject = toy.gameObject;
+
+                Spawned.Add(toy.netIdentity);
             }
 
             if (!(parent is null))
@@ -240,167 +208,18 @@ namespace Mistaken.ColorfulEZ
             for (var i = 0; i < toConvert.transform.childCount; i++)
             {
                 var child = toConvert.transform.GetChild(i);
-                ConvertToToy(child.gameObject, gameObject.transform, room);
+                ConvertToToy(child.gameObject, gameObject.transform);
             }
 
             Instance.Log.Debug($"Loaded {toConvert.name}", PluginHandler.Instance.Config.VerbouseOutput);
-            if (!(toy is null))
-            {
-                if (!gameObject.name.Contains("(ignore)"))
-                {
-                    if (!RoomsObjects.ContainsKey(room))
-                        RoomsObjects.Add(room, new HashSet<NetworkIdentity>());
-                    RoomsObjects[room].Add(toy.netIdentity);
-                }
-            }
 
-            spawnedAmount++;
             return gameObject;
         }
 
-        #region Sync Logic
-        private static IEnumerator<float> UpdateObjectsForPlayers()
-        {
-            while (true)
-            {
-                yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.NormalRefreshTime);
-
-                foreach (var player in RealPlayers.List)
-                {
-                    if (player.GetEffectActive<Scp207>() || player.GetEffectActive<MovementBoost>() || player.Role.Type == RoleType.Scp173 || player.Role.Type == RoleType.Scp096 || player.NoClipEnabled)
-                        continue;
-                    if (player.IsDead)
-                        UpdateForSpectator(player);
-                    else
-                        UpdateForAlive(player);
-                }
-            }
-        }
-
-        private static IEnumerator<float> UpdateObjectsForFastPlayers()
-        {
-            while (true)
-            {
-                yield return Timing.WaitForSeconds(PluginHandler.Instance.Config.FastRefreshTime);
-
-                foreach (var player in RealPlayers.List)
-                {
-                    if (player.GetEffectActive<Scp207>() || player.GetEffectActive<MovementBoost>() || player.Role.Type == RoleType.Scp173 || player.Role.Type == RoleType.Scp096 || player.NoClipEnabled)
-                        UpdateForAlive(player);
-                }
-            }
-        }
-
-        private static void UpdateFor(Player player, API.Utilities.Room room)
-        {
-            try
-            {
-                if (!LastRooms.TryGetValue(player, out var lastRoom))
-                    lastRoom = null;
-
-                if (lastRoom == room)
-                    return;
-
-                HashSet<API.Utilities.Room> loaded;
-                if (!(lastRoom is null))
-                {
-                    loaded = lastRoom.FarNeighbors.ToHashSet();
-                    loaded.Add(lastRoom);
-                }
-                else
-                    loaded = new HashSet<API.Utilities.Room>();
-
-                HashSet<API.Utilities.Room> toLoad;
-                if (!(room is null))
-                {
-                    toLoad = room.FarNeighbors.ToHashSet();
-                    toLoad.Add(room);
-                }
-                else
-                    toLoad = new HashSet<API.Utilities.Room>();
-
-                var intersect = loaded.Intersect(toLoad).ToArray();
-
-                foreach (var item in intersect)
-                {
-                    loaded.Remove(item);
-                    toLoad.Remove(item);
-                }
-
-                foreach (var item in loaded)
-                    UnloadRoomFor(player, item);
-
-                foreach (var item in toLoad)
-                    LoadRoomFor(player, item);
-
-                LastRooms[player] = room;
-            }
-            catch (Exception ex)
-            {
-                Instance.Log.Error(ex);
-            }
-        }
-
-        private static void UpdateForAlive(Player player)
-        {
-            var room = API.Utilities.Room.Get(player.CurrentRoom);
-            UpdateFor(player, room);
-        }
-
-        private static void UpdateForSpectator(Player spectator)
-        {
-            UpdateFor(spectator, API.Utilities.Room.Get(spectator.GetSpectatedPlayer()?.CurrentRoom));
-        }
-
-        private static void LoadRoomFor(Player player, API.Utilities.Room room)
-        {
-            if (!Rooms.Contains(room))
-                return;
-
-            try
-            {
-                foreach (var obj in RoomsObjects[room.ExiledRoom])
-                {
-                    if (Server.SendSpawnMessage is null)
-                        continue;
-
-                    if (player.Connection is null)
-                        continue;
-
-                    Server.SendSpawnMessage.Invoke(null, new object[] { obj, player.Connection });
-                }
-            }
-            catch (Exception ex)
-            {
-                Instance.Log.Error(ex);
-            }
-        }
-
-        private static void UnloadRoomFor(Player player, API.Utilities.Room room)
-        {
-            if (!Rooms.Contains(room))
-                return;
-
-            try
-            {
-                foreach (var obj in RoomsObjects[room.ExiledRoom])
-                {
-                    if (player.Connection.identity.connectionToClient is null)
-                        continue;
-
-                    player.Connection.Send(new ObjectDestroyMessage { netId = obj.netId }, 0);
-                }
-            }
-            catch (Exception ex)
-            {
-                Instance.Log.Error(ex);
-            }
-        }
-
-        private static IEnumerator<float> UpdateColor()
+        private IEnumerator<float> UpdateColor()
         {
             float hue = 0;
-            while (true)
+            while (this.Enabled)
             {
                 yield return Timing.WaitForSeconds(0.1f);
                 ChangeObjectsColor(Color.HSVToRGB(hue / 360f, 1f, 1f, true));
@@ -411,14 +230,10 @@ namespace Mistaken.ColorfulEZ
                     hue = 0;
             }
         }
-        #endregion
 
-        private static void Server_WaitingForPlayers()
+        private void Server_WaitingForPlayers()
         {
-            RoomsObjects.Clear();
-            LastRooms.Clear();
-            Rooms.Clear();
-            spawnedAmount = 0;
+            Spawned.Clear();
 
             if (Prefabs.Count != PrefabConversion.Count)
             {
@@ -429,21 +244,11 @@ namespace Mistaken.ColorfulEZ
                 }
             }
 
-            foreach (var room in API.Utilities.Room.Rooms.Values)
-            {
-                if (!PrefabConversion.ContainsValue(room.ExiledRoom.Type))
-                    continue;
-                Rooms.Add(room);
-            }
-
             SpawnPrefabs();
-            RunCoroutines();
-        }
 
-        private static void Player_Verified(Exiled.Events.EventArgs.VerifiedEventArgs ev)
-        {
-            // foreach (var item in Rooms)
-            //    UnloadRoomFor(ev.Player, item);
+            // ReSharper disable StringLiteralTypo
+            if (PluginHandler.Instance.Config.RainbowMode)
+                this.RunCoroutine(this.UpdateColor(), "colorfulez_updatecolor", true);
         }
     }
 }
