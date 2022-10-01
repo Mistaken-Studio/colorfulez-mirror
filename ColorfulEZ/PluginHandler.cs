@@ -26,7 +26,7 @@ namespace Mistaken.ColorfulEZ
         {
             Instance = this;
 
-            new ColorfulHandler(this);
+            _ = new ColorfulHandler(this);
 
             API.Diagnostics.Module.OnEnable(this);
 
