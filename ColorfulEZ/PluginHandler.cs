@@ -20,7 +20,7 @@ namespace Mistaken.ColorfulEZ
 
         public override PluginPriority Priority => PluginPriority.Default;
 
-        public override Version RequiredExiledVersion => new Version(5, 2, 2);
+        public override Version RequiredExiledVersion => new(5, 2, 2);
 
         public override void OnEnabled()
         {
