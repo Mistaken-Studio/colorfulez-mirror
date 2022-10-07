@@ -120,7 +120,7 @@ namespace Mistaken.ColorfulEZ
                 NetworkServer.Destroy(networkIdentity.gameObject);
             }
 
-            if (!(colorSyncMeshRenderer is null))
+            if (colorSyncMeshRenderer is not null)
                 Object.Destroy(colorSyncMeshRenderer);
         }
 
@@ -144,7 +144,7 @@ namespace Mistaken.ColorfulEZ
             Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
         }
 
-        private static readonly Dictionary<string, RoomType> PrefabConversion = new Dictionary<string, RoomType>()
+        private static readonly Dictionary<string, RoomType> PrefabConversion = new ()
         {
             { "EZ_Straight_Stripes", RoomType.EzStraight },                 // done
             { "EZ_Cafeteria_Stripes", RoomType.EzCafeteria },               // done
@@ -163,8 +163,8 @@ namespace Mistaken.ColorfulEZ
             { "EZ_HCZ_Checkpoint_Stripes", RoomType.HczEzCheckpoint },      // done
         };
 
-        private static readonly HashSet<GameObject> Prefabs = new HashSet<GameObject>();
-        private static readonly HashSet<NetworkIdentity> Spawned = new HashSet<NetworkIdentity>();
+        private static readonly HashSet<GameObject> Prefabs = new ();
+        private static readonly HashSet<NetworkIdentity> Spawned = new ();
         private static MeshRenderer colorSyncMeshRenderer;
 
         private static GameObject ConvertToToy(GameObject toConvert, Transform parent)
@@ -195,7 +195,7 @@ namespace Mistaken.ColorfulEZ
                 Spawned.Add(toy.netIdentity);
             }
 
-            if (!(parent is null))
+            if (parent is not null)
                 gameObject.transform.parent = parent.transform;
             gameObject.name = toConvert.name;
             gameObject.transform.localPosition = toConvert.transform.localPosition;
@@ -235,6 +235,13 @@ namespace Mistaken.ColorfulEZ
         {
             Spawned.Clear();
 
+            foreach (var room in Room.List)
+            {
+                var type = room.Type;
+                if (type == RoomType.EzGateA || type == RoomType.EzGateB || type == RoomType.Surface)
+                    room.Color = Color.white;
+            }
+
             if (Prefabs.Count != PrefabConversion.Count)
             {
                 if (LoadAssets() == 0)
@@ -248,7 +255,7 @@ namespace Mistaken.ColorfulEZ
 
             // ReSharper disable StringLiteralTypo
             if (PluginHandler.Instance.Config.RainbowMode)
-                this.RunCoroutine(this.UpdateColor(), "colorfulez_updatecolor", true);
+                this.RunCoroutine(this.UpdateColor(), nameof(this.UpdateColor), true);
         }
     }
 }
