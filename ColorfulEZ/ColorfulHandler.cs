@@ -234,6 +234,13 @@ namespace Mistaken.ColorfulEZ
         {
             Spawned.Clear();
 
+            foreach (var room in Room.List)
+            {
+                var type = room.Type;
+                if (type == RoomType.EzGateA || type == RoomType.EzGateB || type == RoomType.Surface)
+                    room.Color = Color.white;
+            }
+
             if (Prefabs.Count != PrefabConversion.Count)
             {
                 if (LoadAssets() == 0)
@@ -247,7 +254,7 @@ namespace Mistaken.ColorfulEZ
 
             // ReSharper disable StringLiteralTypo
             if (PluginHandler.Instance.Config.RainbowMode)
-                this.RunCoroutine(this.UpdateColor(), "colorfulez_updatecolor", true);
+                this.RunCoroutine(this.UpdateColor(), nameof(this.UpdateColor), true);
         }
     }
 }

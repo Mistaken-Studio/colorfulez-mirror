@@ -10,7 +10,7 @@ using Exiled.API.Features;
 
 namespace Mistaken.ColorfulEZ
 {
-    internal class PluginHandler : Plugin<Config>
+    internal sealed class PluginHandler : Plugin<Config>
     {
         public override string Author => "Mistaken Devs";
 
