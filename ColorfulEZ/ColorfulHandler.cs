@@ -21,10 +21,6 @@ namespace Mistaken.ColorfulEZ
 {
     internal class ColorfulHandler : API.Diagnostics.Module
     {
-        public static readonly string AssetsPath = Path.Combine(Paths.Plugins, "AssetBoundle");
-
-        public static ColorfulHandler Instance { get; private set; }
-
         public static int LoadAssets()
         {
             Prefabs.Clear();
@@ -144,7 +140,7 @@ namespace Mistaken.ColorfulEZ
             Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
         }
 
-        private static readonly Dictionary<string, RoomType> PrefabConversion = new ()
+        private static readonly Dictionary<string, RoomType> PrefabConversion = new()
         {
             { "EZ_Straight_Stripes", RoomType.EzStraight },                 // done
             { "EZ_Cafeteria_Stripes", RoomType.EzCafeteria },               // done
@@ -163,9 +159,12 @@ namespace Mistaken.ColorfulEZ
             { "EZ_HCZ_Checkpoint_Stripes", RoomType.HczEzCheckpoint },      // done
         };
 
-        private static readonly HashSet<GameObject> Prefabs = new ();
-        private static readonly HashSet<NetworkIdentity> Spawned = new ();
+        private static readonly HashSet<GameObject> Prefabs = new();
+        private static readonly HashSet<NetworkIdentity> Spawned = new();
+        private static readonly string AssetsPath = Path.Combine(Paths.Plugins, "AssetBoundle");
         private static MeshRenderer colorSyncMeshRenderer;
+
+        private static ColorfulHandler Instance { get; set; }
 
         private static GameObject ConvertToToy(GameObject toConvert, Transform parent)
         {
@@ -182,8 +181,8 @@ namespace Mistaken.ColorfulEZ
                 gameObject = new GameObject();
             else
             {
-                toy = API.Toys.ToyHandler.SpawnPrimitive(
-                    API.Toys.ToyHandler.GetPrimitiveType(meshFilter),
+                toy = Toy.API.ToyHandler.SpawnPrimitive(
+                    Toy.API.ToyHandler.GetPrimitiveType(meshFilter),
                     parent,
                     toConvert.GetComponent<MeshRenderer>().material.color,
                     true,

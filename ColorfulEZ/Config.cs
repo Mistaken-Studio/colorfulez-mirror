@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Mistaken.Updater.Config;
 
+#pragma warning disable CS0618
+
 namespace Mistaken.ColorfulEZ
 {
     internal class Config : IAutoUpdatableConfig
@@ -21,7 +23,7 @@ namespace Mistaken.ColorfulEZ
         public bool RainbowMode { get; set; } = false;
 
         [Description("Defines colors stripes can be")]
-        public List<string> Colors { get; set; } = new List<string>()
+        public List<string> Colors { get; set; } = new()
         {
             "#35493e", // KeycardChaosInsurgency
             "#b6887f", // KeycardContainmentEngineer
