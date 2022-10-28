@@ -133,15 +133,11 @@ namespace Mistaken.ColorfulEZ
         public override void OnEnable()
         {
             Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
-            Exiled.Events.Handlers.Warhead.Starting += this.Warhead_Starting;
-            Exiled.Events.Handlers.Warhead.Stopping += this.Warhead_Stopping;
         }
 
         public override void OnDisable()
         {
             Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
-            Exiled.Events.Handlers.Warhead.Starting -= this.Warhead_Starting;
-            Exiled.Events.Handlers.Warhead.Stopping -= this.Warhead_Stopping;
         }
 
         private static readonly Dictionary<string, RoomType> PrefabConversion = new()
@@ -238,13 +234,6 @@ namespace Mistaken.ColorfulEZ
         {
             Spawned.Clear();
 
-            foreach (var room in Room.List)
-            {
-                var type = room.Type;
-                if (type == RoomType.EzGateA || type == RoomType.EzGateB || type == RoomType.Surface)
-                    room.Color = Color.white;
-            }
-
             if (Prefabs.Count != PrefabConversion.Count)
             {
                 if (LoadAssets() == 0)
@@ -259,26 +248,6 @@ namespace Mistaken.ColorfulEZ
             // ReSharper disable StringLiteralTypo
             if (PluginHandler.Instance.Config.RainbowMode)
                 this.RunCoroutine(this.UpdateColor(), nameof(this.UpdateColor), true);
-        }
-
-        private void Warhead_Starting(Exiled.Events.EventArgs.StartingEventArgs ev)
-        {
-            foreach (var room in Room.List)
-            {
-                var type = room.Type;
-                if (type == RoomType.EzGateA || type == RoomType.EzGateB || type == RoomType.Surface)
-                    room.Color = FlickerableLightController.DefaultWarheadColor;
-            }
-        }
-
-        private void Warhead_Stopping(Exiled.Events.EventArgs.StoppingEventArgs ev)
-        {
-            foreach (var room in Room.List)
-            {
-                var type = room.Type;
-                if (type == RoomType.EzGateA || type == RoomType.EzGateB || type == RoomType.Surface)
-                    room.Color = Color.white;
-            }
         }
     }
 }
