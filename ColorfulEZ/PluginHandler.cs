@@ -7,10 +7,11 @@
 using System;
 using Exiled.API.Enums;
 using Exiled.API.Features;
+using Mistaken.Updater.API.Config;
 
 namespace Mistaken.ColorfulEZ
 {
-    internal sealed class PluginHandler : Plugin<Config>
+    internal sealed class PluginHandler : Plugin<Config>, IAutoUpdateablePlugin
     {
         public override string Author => "Mistaken Devs";
 
@@ -21,6 +22,12 @@ namespace Mistaken.ColorfulEZ
         public override PluginPriority Priority => PluginPriority.Default;
 
         public override Version RequiredExiledVersion => new(5, 2, 2);
+
+        public AutoUpdateConfig AutoUpdateConfig => new()
+        {
+            Type = SourceType.GITLAB,
+            Url = "https://git.mistaken.pl/api/v4/projects/17",
+        };
 
         public override void OnEnabled()
         {

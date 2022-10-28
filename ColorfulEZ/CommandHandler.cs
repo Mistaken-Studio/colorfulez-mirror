@@ -14,7 +14,7 @@ namespace Mistaken.ColorfulEZ
     // ReSharper disable once UnusedMember.Global
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     [CommandHandler(typeof(GameConsoleCommandHandler))]
-    internal class CommandHandler : IBetterCommand
+    internal sealed class CommandHandler : IBetterCommand
     {
         public override string Command => "colorfulez";
 
@@ -23,6 +23,7 @@ namespace Mistaken.ColorfulEZ
         public override string[] Execute(ICommandSender sender, string[] args, out bool success)
         {
             success = false;
+
             if (args.Length == 0)
                 return GetUsage();
 
@@ -33,8 +34,10 @@ namespace Mistaken.ColorfulEZ
                     {
                         if (args.Length < 2)
                             return new[] { "You must provide color in hex or name" };
+
                         if (!ColorUtility.TryParseHtmlString(args[1], out var color))
                             return new[] { "Invalid parameter" };
+
                         try
                         {
                             ColorfulHandler.ChangeObjectsColor(color);
