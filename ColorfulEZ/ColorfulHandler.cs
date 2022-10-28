@@ -19,7 +19,7 @@ using UnityEngine;
 // ReSharper disable SuggestVarOrType_BuiltInTypes
 namespace Mistaken.ColorfulEZ
 {
-    internal class ColorfulHandler : API.Diagnostics.Module
+    internal sealed class ColorfulHandler : API.Diagnostics.Module
     {
         public static int LoadAssets()
         {
@@ -88,7 +88,7 @@ namespace Mistaken.ColorfulEZ
                 }
             }
 
-            Instance.Log.Debug($"Spawned {Spawned.Count} objects", PluginHandler.Instance.Config.VerbouseOutput);
+            Instance.Log.Debug($"Spawned {Spawned.Count} objects", PluginHandler.Instance.Config.VerboseOutput);
 
             var color = Color.black;
             if (PluginHandler.Instance.Config.Colors != null)
@@ -133,11 +133,15 @@ namespace Mistaken.ColorfulEZ
         public override void OnEnable()
         {
             Exiled.Events.Handlers.Server.WaitingForPlayers += this.Server_WaitingForPlayers;
+            Exiled.Events.Handlers.Warhead.Starting += this.Warhead_Starting;
+            Exiled.Events.Handlers.Warhead.Stopping += this.Warhead_Stopping;
         }
 
         public override void OnDisable()
         {
             Exiled.Events.Handlers.Server.WaitingForPlayers -= this.Server_WaitingForPlayers;
+            Exiled.Events.Handlers.Warhead.Starting -= this.Warhead_Starting;
+            Exiled.Events.Handlers.Warhead.Stopping -= this.Warhead_Stopping;
         }
 
         private static readonly Dictionary<string, RoomType> PrefabConversion = new()
@@ -173,7 +177,7 @@ namespace Mistaken.ColorfulEZ
 
             var ignore = toConvert.name.Contains("(ignore)");
 
-            Instance.Log.Debug($"Loading {toConvert.name}", PluginHandler.Instance.Config.VerbouseOutput);
+            Instance.Log.Debug($"Loading {toConvert.name}", PluginHandler.Instance.Config.VerboseOutput);
             var meshFilter = toConvert.GetComponent<MeshFilter>();
             GameObject gameObject;
             PrimitiveObjectToy toy = null;
@@ -198,7 +202,7 @@ namespace Mistaken.ColorfulEZ
                 gameObject.transform.parent = parent.transform;
             gameObject.name = toConvert.name;
             gameObject.transform.localPosition = toConvert.transform.localPosition;
-            Instance.Log.Debug($"Position: {toConvert.transform.position}", PluginHandler.Instance.Config.VerbouseOutput);
+            Instance.Log.Debug($"Position: {toConvert.transform.position}", PluginHandler.Instance.Config.VerboseOutput);
             gameObject.transform.localRotation = toConvert.transform.localRotation;
             gameObject.transform.localScale = toConvert.transform.localScale;
 
@@ -210,7 +214,7 @@ namespace Mistaken.ColorfulEZ
                 ConvertToToy(child.gameObject, gameObject.transform);
             }
 
-            Instance.Log.Debug($"Loaded {toConvert.name}", PluginHandler.Instance.Config.VerbouseOutput);
+            Instance.Log.Debug($"Loaded {toConvert.name}", PluginHandler.Instance.Config.VerboseOutput);
 
             return gameObject;
         }
@@ -255,6 +259,26 @@ namespace Mistaken.ColorfulEZ
             // ReSharper disable StringLiteralTypo
             if (PluginHandler.Instance.Config.RainbowMode)
                 this.RunCoroutine(this.UpdateColor(), nameof(this.UpdateColor), true);
+        }
+
+        private void Warhead_Starting(Exiled.Events.EventArgs.StartingEventArgs ev)
+        {
+            foreach (var room in Room.List)
+            {
+                var type = room.Type;
+                if (type == RoomType.EzGateA || type == RoomType.EzGateB || type == RoomType.Surface)
+                    room.Color = FlickerableLightController.DefaultWarheadColor;
+            }
+        }
+
+        private void Warhead_Stopping(Exiled.Events.EventArgs.StoppingEventArgs ev)
+        {
+            foreach (var room in Room.List)
+            {
+                var type = room.Type;
+                if (type == RoomType.EzGateA || type == RoomType.EzGateB || type == RoomType.Surface)
+                    room.Color = Color.white;
+            }
         }
     }
 }

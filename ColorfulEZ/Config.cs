@@ -6,18 +6,16 @@
 
 using System.Collections.Generic;
 using System.ComponentModel;
-using Mistaken.Updater.Config;
-
-#pragma warning disable CS0618
+using Exiled.API.Interfaces;
 
 namespace Mistaken.ColorfulEZ
 {
-    internal class Config : IAutoUpdatableConfig
+    internal sealed class Config : IConfig
     {
         public bool IsEnabled { get; set; } = true;
 
         [Description("If true then debug will be displayed")]
-        public bool VerbouseOutput { get; set; }
+        public bool VerboseOutput { get; set; }
 
         [Description("If true then entrance zone rooms 'stripes' will change color rapidly")]
         public bool RainbowMode { get; set; } = false;
@@ -39,8 +37,5 @@ namespace Mistaken.ColorfulEZ
             "#217778", // KeycardZoneManager
             "#FFFFFF", // White
         };
-
-        [Description("Auto Update Settings")]
-        public Dictionary<string, string> AutoUpdateConfig { get; set; }
     }
 }
